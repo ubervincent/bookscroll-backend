@@ -1,13 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, UseInterceptors, UploadedFile, Post, Body } from '@nestjs/common';
 import { BookService } from './book.service';
-import { CreateBookDto } from './dto/create-book.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('book')
 export class BookController {
   constructor(private readonly bookService: BookService) {}
 
   @Post('upload')
-  create(@Body() createBookDto: CreateBookDto) {
-    return this.bookService.create(createBookDto);
+  @UseInterceptors(FileInterceptor('book'))
+  upload(@UploadedFile() file: Express.Multer.File) {
+    return this.bookService.upload(file);
   }
 }

@@ -1,12 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { CreateBookDto } from './dto/create-book.dto';
 
 @Injectable()
 export class BookService {
-  create(createBookDto: CreateBookDto) {
+  upload(file: Express.Multer.File) {
     return {
-      message: `Book ${createBookDto.title} by ${createBookDto.author} uploaded successfully`,
-      data: createBookDto,
+      message: `Book ${file.originalname} uploaded successfully`,
     };
   }
 }
