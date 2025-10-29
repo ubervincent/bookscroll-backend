@@ -1,4 +1,4 @@
-import { Controller, UseInterceptors, UploadedFile, Post, Body, UsePipes } from '@nestjs/common';
+import { Controller, UseInterceptors, UploadedFile, Post, Get, Param } from '@nestjs/common';
 import { BookService } from './services/book.service';
 import { Snippet } from './services/snippet-extraction.service';
 import { FileInterceptor } from '@nestjs/platform-express';
