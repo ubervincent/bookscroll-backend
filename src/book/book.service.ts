@@ -1,17 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { EPub } from 'epub2';
 import path from 'path';
 import fs from 'fs';
 import * as cheerio from 'cheerio';
-import { OpenAI } from 'openai';
-import { zodTextFormat } from 'openai/helpers/zod.mjs';
+import OpenAI from 'openai';
+import { zodTextFormat } from 'openai/helpers/zod';
 import { z } from 'zod';
 import pLimit from 'p-limit';
 
 const MAX_CONCURRENT_REQUESTS = 15;
 
 const SENTENCE_LENGTH_THRESHOLD = 5;
-const JOIN_SENTENCES_THRESHOLD = 20;
+const JOIN_SENTENCES_THRESHOLD = 25;
 
 const SNIPPET_MAX_LENGTH = 20;
 const SNIPPET_MIN_LENGTH = 5;
@@ -21,7 +21,9 @@ You are a social media expert that extracts and paraphrases social media worthy,
 
 Don't include any text that doesn't make sense without its context, doesn't make sense on its own or can't be quoted and shared. 
 
-Don't include any text that is not relevant to the book.
+Sometimes you're given a paragraph that is not relevant to the book, like copyright text. In this case, don't choose any sentences from it.
+
+Extract the themes of the book and return them in the themes array. The themes should be broad and general and in lower case.
 
 Every sentence is tagged with its index. Return the start and end sentence from which the snippet is taken.
 
@@ -30,7 +32,6 @@ The snippets should be no more than ${SNIPPET_MAX_LENGTH} words.
 The snippets should be no less than ${SNIPPET_MIN_LENGTH} words.
 
 You have the freedom to return absolutely nothing if no snippets are found.
-
 `;
 
 const SnippetsSchema = 
@@ -41,10 +42,18 @@ z.object({
       endSentence: z.number(),
       snippetText: z.string(),
       reason: z.string(),
-      originalText: z.string(),
+      themes: z.array(z.string()),
     })
   ),
 });
+
+export interface SnippetResponse {
+  startSentence: number;
+  endSentence: number;
+  snippetText: string;
+  reason: string;
+  themes: string[];
+}
 
 export interface ProcessedSentence {
   [index: number]: string;
@@ -60,6 +69,10 @@ export interface Book {
 export interface Snippet {
   startSentence: number;
   endSentence: number;
+  snippetText: string;
+  reason: string;
+  themes: string[];
+  sentenceText: string;
 }
 
 const logger = new Logger('BookService');
@@ -68,7 +81,7 @@ const logger = new Logger('BookService');
 export class BookService {
   async upload(file: Express.Multer.File) {
     const filePath = this.saveBook(file);
-    let book = await this.parseEpub(filePath);
+    let book = await this.parseEpub(await filePath);
     book.snippets = await this.getSnippetFromBook(book);
 
     return {
@@ -78,14 +91,21 @@ export class BookService {
     
   }
 
-  private saveBook(book: Express.Multer.File) {
+  private async saveBook(book: Express.Multer.File) {
     const epubsDir = path.join(process.cwd(), 'epubs');
-    if (!fs.existsSync(epubsDir)) {
-      fs.mkdirSync(epubsDir, { recursive: true });
+
+    if (!book || !book.originalname) {
+      throw new BadRequestException('Invalid book file');
     }
 
-    const newFilePath = path.join(epubsDir, book.originalname);
-    fs.writeFileSync(newFilePath, book.buffer);
+    if (!(await fs.promises.access(epubsDir).then(() => true).catch(() => false))) {
+      await fs.promises.mkdir(epubsDir, { recursive: true });
+    }
+
+    const sanitisedFileName = book.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
+
+    const newFilePath = path.join(epubsDir, sanitisedFileName);
+    await fs.promises.writeFile(newFilePath, book.buffer);
 
     return newFilePath;
   }
@@ -117,7 +137,7 @@ export class BookService {
 
     logger.log(`OpenAI response: ${response.output_parsed}`);
 
-    return response.output_parsed as { snippets: Snippet[] };
+    return response.output_parsed as { snippets: SnippetResponse[] };
   }
 
   private async getSnippetFromBook(book: Book) {
@@ -138,36 +158,32 @@ export class BookService {
 
     await Promise.all(test.map(paragraph => limit(async () => {
       const result = await this.callOpenAI(paragraph);
-      snippets = [...snippets, ...result.snippets];
+      snippets = [...snippets, ...result.snippets.map(snippet => ({
+        ...snippet,
+        sentenceText: this.getSnippetTextFromIndices(book, snippet.startSentence, snippet.endSentence),
+      }))];
     })));
-
-    snippets = snippets.map(snippet => ({
-      ...snippet,
-      sentenceText: this.getSnippetTextFromIndices(book, snippet.startSentence, snippet.endSentence),
-    }));
 
     return snippets;
   }
 
   private getSnippetTextFromIndices(book: Book, startIndex: number, endIndex: number) {
-    let text = '';
-    
-    if (startIndex === endIndex) {
-      text = book.sentences[startIndex];
-      return text
-    } else {
-      const numSentences = endIndex - startIndex;
-      for (let i = 0; i < numSentences; i++) {
-        text += book.sentences[startIndex + i];
+    const from = Math.min(startIndex, endIndex);
+    const to = Math.max(startIndex, endIndex);
+    const parts: string[] = [];
+    for (let i = from; i <= to; i++) {
+      const s = book.sentences[i];
+      if (s) {
+        parts.push(s);
       }
     }
-    return text;
+    return parts.join(' ').trim();
   }
 
   private getChapterRawAsync(epub, id: string) {
     return new Promise((resolve, reject) => {
       epub.getChapterRaw(id, (error, text) => {
-        if (error) reject(error);
+        if (error) return reject(error);
         resolve(text);
       });
     });
