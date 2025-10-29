@@ -1,6 +1,8 @@
-import { Controller, UseInterceptors, UploadedFile, Post, Body } from '@nestjs/common';
-import { BookService } from './book.service';
+import { Controller, UseInterceptors, UploadedFile, Post, Body, UsePipes } from '@nestjs/common';
+import { BookService, Snippet } from './book.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { FileSizeValidationPipe } from './pipes/file-size-validation.pipe';
+import { FileTypeValidationPipe } from './pipes/file-type-validation.pipe';
 
 @Controller('book')
 export class BookController {
@@ -8,7 +10,11 @@ export class BookController {
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('book'))
-  upload(@UploadedFile() file: Express.Multer.File) {
-    return this.bookService.upload(file);
-  }
+  async upload(
+    @UploadedFile(new FileTypeValidationPipe(), new FileSizeValidationPipe()) 
+    file: Express.Multer.File,
+  ): Promise<{ message: string; snippets: Snippet[] }> {
+    const result = await this.bookService.upload(file);
+    return result;
+  } 
 }
