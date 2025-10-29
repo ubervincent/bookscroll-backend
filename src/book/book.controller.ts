@@ -1,5 +1,6 @@
 import { Controller, UseInterceptors, UploadedFile, Post, Body, UsePipes } from '@nestjs/common';
-import { BookService, Snippet } from './book.service';
+import { BookService } from './services/book.service';
+import { Snippet } from './services/snippet-extraction.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileSizeValidationPipe } from './pipes/file-size-validation.pipe';
 import { FileTypeValidationPipe } from './pipes/file-type-validation.pipe';
