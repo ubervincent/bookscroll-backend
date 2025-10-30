@@ -6,7 +6,7 @@ import { BookRepository } from '../repositories/book.repository';
 import { Book as BookEntity } from '../entities/book.entity';
 import { Snippet as SnippetEntity } from '../entities/snippet.entity';
 import { Theme as ThemeEntity } from '../entities/theme.entity';
-import { SentencesResponseDto } from '../dto/book.dto';
+import { SentencesResponseDto, BookResponseDto } from '../dto/book.dto';
 
 export interface Book {
   title: string;
@@ -49,6 +49,11 @@ export class BookService {
       message: `Book ${bookEntity.id} - ${bookEntity.title} uploaded successfully`,
     };  
 
+  }
+
+  async getAllBooks() : Promise<BookResponseDto[]> {
+    const books = await this.bookRepository.getAllBooks();
+    return books;
   }
 
   async getBookSentencesByIndices(bookId: number, startSentence: number, endSentence: number) : Promise<SentencesResponseDto> {

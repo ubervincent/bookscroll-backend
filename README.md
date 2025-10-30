@@ -9,6 +9,16 @@
     "Hello World!"
     ```
 
+- **GET /book**
+  - **Description**: Get all books.
+  - **Response**:
+    ```json
+    [
+      { "id": 1, "title": "...", "author": "..." },
+      { "id": 2, "title": "...", "author": "..." },
+    ]
+    ``
+
 - **POST /book/upload**
   - **Description**: Upload an EPUB file for ingestion.
   - **Body**: multipart/form-data with field `book` (file).

@@ -8,3 +8,9 @@ export class SentencesResponseDto {
   previousSentence: string;
   nextSentence: string;
 }
+
+export class BookResponseDto {
+  id?: number;
+  title?: string;
+  author?: string;
+}

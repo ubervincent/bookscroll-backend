@@ -43,4 +43,10 @@ export class BookRepository {
   async getSnippetsByTheme(theme: string): Promise<Snippet[]> {
     return this.dataSource.getRepository(Snippet).find({ where: { themes: { name: theme } }, relations: ['book', 'themes'] });
   }
+
+  async getAllBooks(): Promise<Book[]> {
+    return this.dataSource.getRepository(Book).find({
+      select: ['id', 'title', 'author'],
+    });
+  }
 }

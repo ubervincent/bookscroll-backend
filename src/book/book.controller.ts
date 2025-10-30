@@ -3,11 +3,16 @@ import { BookService } from './services/book.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileSizeValidationPipe } from './pipes/file-size-validation.pipe';
 import { FileTypeValidationPipe } from './pipes/file-type-validation.pipe';
-import { SentencesResponseDto } from './dto/book.dto';
+import { BookResponseDto, SentencesResponseDto } from './dto/book.dto';
 
 @Controller('book')
 export class BookController {
   constructor(private readonly bookService: BookService) {}
+
+  @Get()
+  async getAllBooks() : Promise<BookResponseDto[]> {
+    return await this.bookService.getAllBooks();
+  }
 
   @Post('upload')
   @UseInterceptors(FileInterceptor('book'))
