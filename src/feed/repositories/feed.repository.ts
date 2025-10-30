@@ -29,9 +29,10 @@ export class FeedRepository {
     });
   }
 
-  async getFeedByBookId(bookId: number): Promise<Snippet[]> {
+  async getFeedByBookIdAndLimit(bookId: number, limit?: number): Promise<Snippet[]> {
     return this.dataSource.getRepository(Snippet).find({
       where: { book: { id: bookId } },
+      take: limit,
       select: {
         book: {
           id: true,

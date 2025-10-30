@@ -84,7 +84,7 @@ export class SnippetExtractionService {
     let snippets: Snippet[] = [];
     const limit = pLimit(MAX_CONCURRENT_REQUESTS);
 
-    await Promise.all(paragraphs.map((paragraph, index) => limit(async () => {
+    await Promise.all(paragraphs.slice(0, 3).map((paragraph, index) => limit(async () => {
       const result = await this.callOpenAI(paragraph, index);
       snippets = [...snippets, ...result.snippets.map(snippet => ({
         ...snippet,

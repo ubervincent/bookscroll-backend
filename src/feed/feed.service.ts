@@ -27,8 +27,8 @@ export class FeedService {
     }
   }
 
-  async getFeedByBookId(bookId: number): Promise<Feed[]> {
-    const snippets = await this.feedRepository.getFeedByBookId(bookId);
+  async getFeedByBookIdAndLimit(bookId: number, limit?: number): Promise<Feed[]> {
+    const snippets = await this.feedRepository.getFeedByBookIdAndLimit(bookId, limit);
     return snippets.map(snippet => this.toFeed(snippet));
   }
 

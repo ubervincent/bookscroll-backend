@@ -69,9 +69,6 @@ export class EpubParserService {
     private typeOfText(text: string) {
         const hasXMLDeclaration = text.startsWith('<?xml');
         const hasXHTMLNamespace = text.includes('xmlns="http://www.w3.org/1999/xhtml"');
-        const hasXMLNamespaces = text.includes('xmlns=');
-        const hasXMLAttributes = text.includes('xml:lang=') || text.includes('xml:space=');
-        const hasSelfClosingTags = text.includes('/>');
 
         if (hasXMLDeclaration && hasXHTMLNamespace) {
             return 'xhtml';

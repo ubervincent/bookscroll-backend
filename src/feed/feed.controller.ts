@@ -13,7 +13,10 @@ export class FeedController {
   }
 
   @Get('book/:bookId')
-  async getFeedByBookId(@Param('bookId') bookId: number) {
-    return await this.feedService.getFeedByBookId(bookId);
+  async getFeedByBookId(
+    @Param('bookId') bookId: number,
+    @Query('limit') limit?: number,
+  ) {
+    return await this.feedService.getFeedByBookIdAndLimit(bookId, limit);
   }
 }
