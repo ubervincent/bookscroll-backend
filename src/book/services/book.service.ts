@@ -84,16 +84,6 @@ export class BookService {
     return result;
   }
 
-  private getSentence(sentences: Record<number, string>, from: number, to: number): string {
-    const totalSentences = Object.keys(sentences).length;
-    if (from < 1 || to > totalSentences) {
-      return '';
-    }
-    return Array.from({ length: to - from + 1 }, (_, i) => from + i + 1)
-      .map(index => sentences[index])
-      .join(' ');
-  }
-
   private toSnippetEntity(snippet: Snippet, savedThemesEntities: ThemeEntity[]): SnippetEntity {
     const snippetEntity = new SnippetEntity();
     snippetEntity.startSentence = snippet.startSentence;
