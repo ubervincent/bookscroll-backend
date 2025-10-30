@@ -25,7 +25,7 @@ export class BookRepository {
   }
 
   async getBookById(id: number): Promise<Book> {
-    const book = await this.dataSource.getRepository(Book).findOne({ where: { id }, relations: ['snippets', 'snippets.themes'] });
+    const book = await this.dataSource.getRepository(Book).findOne({ where: { id }, select: ['id', 'title', 'author', 'sentences'] });
     if (!book) {
       throw new NotFoundException(`Book with id ${id} not found`);
     }
@@ -49,5 +49,58 @@ export class BookRepository {
     return this.dataSource.getRepository(Book).find({
       select: ['id', 'title', 'author'],
     });
+  }
+
+  async getSentenceWindowByIndices(
+    bookId: number,
+    from: number,
+    to: number,
+  ): Promise<{ title: string | null; author: string | null; fullText: string; prevText: string; nextText: string } | null> {
+    const rows = await this.dataSource.query(
+      `
+      select
+        b.title as title,
+        b.author as author,
+        coalesce(
+          (
+            select string_agg(e.value, ' ' order by (e.key)::int)
+            from jsonb_each_text(b.sentences) e
+            where (e.key)::int between $2 and $3
+          ), ''
+        ) as "fullText",
+        coalesce(
+          (
+            select string_agg(e.value, ' ' order by (e.key)::int)
+            from jsonb_each_text(b.sentences) e
+            where (e.key)::int between $2-1 and $2
+          ), ''
+        ) as "prevText",
+        coalesce(
+          (
+            select string_agg(e.value, ' ' order by (e.key)::int)
+            from jsonb_each_text(b.sentences) e
+            where (e.key)::int between $3 and $3+1
+          ), ''
+        ) as "nextText"
+      from book b
+      where b.id = $1
+      `,
+      [bookId, from, to]
+    );
+
+    if (!rows || rows.length === 0) {
+      return null;
+    }
+
+    const row = rows[0] as { title: string | null; author: string | null; fulltext: string; prevtext: string; nexttext: string } & Record<string, any>;
+
+    // Ensure consistent casing regardless of driver behavior
+    return {
+      title: row.title ?? null,
+      author: row.author ?? null,
+      fullText: (row.fullText ?? row.fulltext ?? ''),
+      prevText: (row.prevText ?? row.prevtext ?? ''),
+      nextText: (row.nextText ?? row.nexttext ?? ''),
+    };
   }
 }

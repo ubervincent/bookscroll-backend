@@ -57,26 +57,23 @@ export class BookService {
   }
 
   async getBookSentencesByIndices(bookId: number, startSentence: number, endSentence: number) : Promise<SentencesResponseDto> {
-    const book = await this.bookRepository.getBookById(bookId);
-
-    if (!book) {
-      throw new NotFoundException(`Book with id ${bookId} not found`);
-    }
-
     const from = Math.min(startSentence, endSentence);
     const to = Math.max(startSentence, endSentence);
 
-    const window = 1;
+    const windowResult = await this.bookRepository.getSentenceWindowByIndices(bookId, from, to);
+    if (!windowResult) {
+      throw new NotFoundException(`Book with id ${bookId} not found`);
+    }
 
     const response: SentencesResponseDto = {
-      bookId: book.id,
-      bookTitle: book.title,
-      bookAuthor: book.author,
+      bookId: bookId,
+      bookTitle: windowResult.title ?? '',
+      bookAuthor: windowResult.author ?? '',
       startSentence: from,
       endSentence: to,
-      fullSentence: this.getSentence(book.sentences, from, to),
-      previousSentence: this.getSentence(book.sentences, from - window, from),
-      nextSentence: this.getSentence(book.sentences, to, to + window),
+      fullSentence: windowResult.fullText,
+      previousSentence: windowResult.prevText,
+      nextSentence: windowResult.nextText,
     };
 
     return response;
