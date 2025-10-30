@@ -83,7 +83,7 @@ export class EpubParserService {
 
             const book: Book = {
                 title: epub.metadata.title,
-                author: epub.metadata.author,
+                author: epub.metadata.creator,
                 sentences: {},
                 snippets: [],
             };

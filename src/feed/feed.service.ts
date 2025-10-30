@@ -4,6 +4,8 @@ import { Snippet } from 'src/book/entities/snippet.entity';
 
 export interface Feed {
   bookId: number;
+  bookTitle: string;
+  bookAuthor: string;
   snippetId: number;
   snippetText: string;
   reason: string;
@@ -46,6 +48,8 @@ export class FeedService {
 
   private toFeed(snippet: Snippet): Feed {
     return {
+      bookTitle: snippet.book.title as string,
+      bookAuthor: snippet.book.author as string,
       bookId: snippet.book.id as number,
       snippetId: snippet.id as number,
       snippetText: snippet.snippetText,

@@ -11,6 +11,8 @@ export class FeedRepository {
       select: {
         book: {
           id: true,
+          title: true,
+          author: true,
         },
       },
       relations: ['book', 'themes'],
@@ -34,6 +36,8 @@ export class FeedRepository {
       select: {
         book: {
           id: true,
+          title: true, 
+          author: true,
         },
       },
       relations: ['book', 'themes'],
