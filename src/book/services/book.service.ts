@@ -83,12 +83,8 @@ export class BookService {
   }
 
   async deleteById(id: number) {
-    const book = await this.bookRepository.getBookById(id);
-    if (!book) {
-      throw new NotFoundException(`Book with id ${id} not found`);
-    }
-    await this.bookRepository.deleteBook(book);
-    return { message: `Book with id ${id} deleted successfully` };
+    const result = await this.bookRepository.deleteBook(id);
+    return result;
   }
 
   private getSentence(sentences: Record<number, string>, from: number, to: number): string {

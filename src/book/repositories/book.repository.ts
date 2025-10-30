@@ -32,8 +32,9 @@ export class BookRepository {
     return book;
   }
 
-  async deleteBook(book: Book) {
-    await this.dataSource.getRepository(Book).remove(book);
+  async deleteBook(id: number) : Promise<{ message: string }> {
+    await this.dataSource.getRepository(Book).delete(id);
+    return { message: `Book with id ${id} deleted successfully` };
   }
 
   async getSnippetsByBookId(id: number): Promise<Snippet[]> {
