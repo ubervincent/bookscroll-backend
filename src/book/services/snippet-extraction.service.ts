@@ -14,26 +14,26 @@ export interface Snippet {
   sentenceText: string;
 }
 
-const SnippetsSchema = 
-z.object({
-  snippets: z.array(
+const SnippetsSchema =
   z.object({
-      startSentence: z.number(),
-      endSentence: z.number(),
-      snippetText: z.string(),
-      reason: z.string(),
-      themes: z.array(z.string()),
-    })
-  ),
-});
+    snippets: z.array(
+      z.object({
+        startSentence: z.number(),
+        endSentence: z.number(),
+        snippetText: z.string(),
+        reason: z.string(),
+        themes: z.array(z.string()),
+      })
+    ),
+  });
 
 export interface SnippetResponse {
-    startSentence: number;
-    endSentence: number;
-    snippetText: string;
-    reason: string;
-    themes: string[];
-  }
+  startSentence: number;
+  endSentence: number;
+  snippetText: string;
+  reason: string;
+  themes: string[];
+}
 
 const SNIPPET_MAX_LENGTH = 20;
 const SNIPPET_MIN_LENGTH = 5;
@@ -78,14 +78,14 @@ export class SnippetExtractionService {
       const paragraph = taggedSentences.slice(i, i + JOIN_SENTENCES_THRESHOLD);
       paragraphs.push(paragraph.join(' '));
     }
-    
-    const test = paragraphs.slice(0, 1);
+
+    logger.log(`Total paragraphs: ${paragraphs.length}`);
 
     let snippets: Snippet[] = [];
     const limit = pLimit(MAX_CONCURRENT_REQUESTS);
 
-    await Promise.all(test.map(paragraph => limit(async () => {
-      const result = await this.callOpenAI(paragraph);
+    await Promise.all(paragraphs.map((paragraph, index) => limit(async () => {
+      const result = await this.callOpenAI(paragraph, index);
       snippets = [...snippets, ...result.snippets.map(snippet => ({
         ...snippet,
         sentenceText: this.getSnippetTextFromIndices(book, snippet.startSentence, snippet.endSentence),
@@ -107,34 +107,34 @@ export class SnippetExtractionService {
     }
     return parts.join(' ').trim();
   }
-    
-    private async callOpenAI(paragraph: string) {
-        const client = new OpenAI({
-          apiKey: process.env.OPENAI_API_KEY,
-        });
-    
-        logger.log(`Calling OpenAI...`);
-    
-        const response = await client.responses.parse({
-          model: "gpt-5-nano-2025-08-07",
-          reasoning: { effort: "minimal" },
-          input: [
-            {
-              role: "system",
-              content: SYSTEM_INSTRUCTIONS
-            },
-            {
-              role: "user",
-              content: paragraph,
-            }
-          ],
-          text: {
-            format: zodTextFormat(SnippetsSchema, "snippets"),
-          }
-        });
-    
-        logger.log(`OpenAI response: ${response.output_parsed}`);
-    
-        return response.output_parsed as { snippets: SnippetResponse[] };
+
+  private async callOpenAI(paragraph: string, paragraphIndex: number) {
+    const client = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    logger.log(`Calling OpenAI for paragraph ${paragraphIndex}`);
+
+    const response = await client.responses.parse({
+      model: "gpt-5-nano-2025-08-07",
+      reasoning: { effort: "minimal" },
+      input: [
+        {
+          role: "system",
+          content: SYSTEM_INSTRUCTIONS
+        },
+        {
+          role: "user",
+          content: paragraph,
+        }
+      ],
+      text: {
+        format: zodTextFormat(SnippetsSchema, "snippets"),
       }
+    });
+
+    logger.log(`OpenAI response: ${response.output_parsed} for paragraph ${paragraphIndex}`);
+
+    return response.output_parsed as { snippets: SnippetResponse[] };
+  }
 }

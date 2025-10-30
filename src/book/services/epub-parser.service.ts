@@ -2,6 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { EPub } from 'epub2';
 import * as cheerio from 'cheerio';
 import { Book } from './book.service';
+import { Logger } from '@nestjs/common';
+
+const logger = new Logger('EpubParserService');
+
 const SENTENCE_LENGTH_THRESHOLD = 5;
 
 export interface ProcessedSentence {
@@ -10,11 +14,13 @@ export interface ProcessedSentence {
 
 @Injectable()
 export class EpubParserService {
-    private getChapterRawAsync(epub, id: string) {
+    private getChapterRawAsync(epub: EPub, id: string): Promise<string> {
         return new Promise((resolve, reject) => {
             epub.getChapterRaw(id, (error, text) => {
-                if (error) return reject(error);
-                resolve(text);
+                if (error) {
+                    return reject(error as Error);
+                }
+                return resolve(text as string);
             });
         });
     }
@@ -37,13 +43,18 @@ export class EpubParserService {
             'h4',
             'h5',
             'h6',
+            'div'
         ];
 
         const text = await this.getChapterRawAsync(epub, chapter);
-        const $ = cheerio.load(text as string);
+        const type = this.typeOfText(text as string);
+        const $ = cheerio.load(text as string, { xmlMode: type === 'xml' || type === 'xhtml' });
+        logger.log(`Total number of elements: ${$('*').length}`);
+
         const sentences = $(tags.join(','))
             .toArray()
             .map((el) => $(el).text());
+
 
         for (const [index, sentence] of sentences.entries()) {
             const normalisedSentence = this.normaliseSentence(sentence);
@@ -55,30 +66,48 @@ export class EpubParserService {
         return processedSentences;
     }
 
-    async parseEpub(filePath: string) {
-        let epub = await EPub.createAsync(filePath);
+    private typeOfText(text: string) {
+        const hasXMLDeclaration = text.startsWith('<?xml');
+        const hasXHTMLNamespace = text.includes('xmlns="http://www.w3.org/1999/xhtml"');
+        const hasXMLNamespaces = text.includes('xmlns=');
+        const hasXMLAttributes = text.includes('xml:lang=') || text.includes('xml:space=');
+        const hasSelfClosingTags = text.includes('/>');
 
-        const book: Book = {
-            title: epub.metadata.title,
-            author: epub.metadata.author,
-            sentences: {},
-            snippets: [],
-        };
-
-        let globalSentenceIndex = 0;
-
-        for (const chapter of epub.flow) {
-            const chapterSentences = await this.getProcessedSentences(
-                chapter.id,
-                epub,
-                globalSentenceIndex,
-            );
-            book.sentences = { ...book.sentences, ...chapterSentences };
-            globalSentenceIndex += Object.keys(chapterSentences).length;
+        if (hasXMLDeclaration && hasXHTMLNamespace) {
+            return 'xhtml';
+        } else if (hasXMLDeclaration && !hasXHTMLNamespace) {
+            return 'xml';
+        } else {
+            return 'html';
         }
-
-        return book;
     }
+
+    async parseEpub(filePath: string) {
+            let epub = await EPub.createAsync(filePath);
+
+            const book: Book = {
+                title: epub.metadata.title,
+                author: epub.metadata.author,
+                sentences: {},
+                snippets: [],
+            };
+
+            let globalSentenceIndex = 0;
+
+            logger.log(`Total chapters: ${epub.flow.length}`);
+
+            for (const chapter of epub.flow) {
+                const chapterSentences = await this.getProcessedSentences(
+                    chapter.id,
+                    epub,
+                    globalSentenceIndex,
+                );
+                book.sentences = { ...book.sentences, ...chapterSentences };
+                globalSentenceIndex += Object.keys(chapterSentences).length;
+            }
+
+            return book;
+        }
 
     private normaliseSentence(sentence: string) {
         return sentence.replace(/[\t\n]/g, '');
