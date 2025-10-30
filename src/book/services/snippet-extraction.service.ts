@@ -41,18 +41,20 @@ const SNIPPET_MIN_LENGTH = 5;
 
 const MAX_CONCURRENT_REQUESTS = 15;
 
-const JOIN_SENTENCES_THRESHOLD = 25;
+const JOIN_SENTENCES_THRESHOLD = 30;
 
 const SYSTEM_INSTRUCTIONS = `
 You are a social media expert that extracts and paraphrases social media worthy,
  
-coherent, inspirational shareable, highly quotable snippets about key ideas and concepts in the book that stand on its own for scrolling purposes.
+coherent, inspirational shareable, highly quotable snippets about key ideas 
+
+and concepts in the book that stand on its own for scrolling purposes.
 
 Don't include any text that doesn't make sense without its context, doesn't make sense on its own or can't be quoted and shared. 
 
-Sometimes you're given a paragraph that is not relevant to the book, like copyright text. In this case, don't choose any sentences from it.
+Sometimes you're given a paragraph that is not relevant to the book, like copyright text or chapter titles. In these cases, don't choose any sentences from it.
 
-Extract the themes of the book and return them in the themes array. The themes should be broad and general and in lower case.
+Extract the themes of the snippet and return them in the themes array. The themes should be broad and general and in lower case.
 
 Every sentence is tagged with its index. Return the start and end sentence from which the snippet is taken.
 

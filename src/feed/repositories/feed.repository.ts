@@ -39,4 +39,15 @@ export class FeedRepository {
       relations: ['book', 'themes'],
     });
   }
+
+  async getFeedByTheme(theme: string, limit?: number): Promise<Snippet[]> {
+    return this.dataSource.getRepository(Snippet)
+    .createQueryBuilder('snippet')
+    .leftJoinAndSelect('snippet.book', 'book')
+    .leftJoinAndSelect('snippet.themes', 'themes')
+    .where('themes.name ILIKE :theme', { theme: `%${theme}%` })
+    .orderBy('RANDOM()')
+    .limit(limit || 10)
+    .getMany();
+  }
 }

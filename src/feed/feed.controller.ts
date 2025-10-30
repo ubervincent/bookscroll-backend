@@ -19,4 +19,12 @@ export class FeedController {
   ) {
     return await this.feedService.getFeedByBookIdAndLimit(bookId, limit);
   }
+
+  @Get('theme/:theme')
+  async getFeedByTheme(
+    @Param('theme') theme: string,
+    @Query('limit') limit?: number,
+  ) {
+    return await this.feedService.getFeedByTheme(theme, limit);
+  }
 }

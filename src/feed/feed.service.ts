@@ -35,6 +35,11 @@ export class FeedService {
     return snippets.map(snippet => this.toFeed(snippet));
   }
 
+  async getFeedByTheme(theme: string, limit?: number): Promise<Feed[]> {
+    const snippets = await this.feedRepository.getFeedByTheme(theme, limit);
+    return snippets.map(snippet => this.toFeed(snippet));
+  }
+
   private randomizeFeed(feed: Feed[]): Feed[] {
     return feed.sort(() => Math.random() - 0.5);
   }
