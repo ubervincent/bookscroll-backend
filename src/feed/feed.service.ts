@@ -7,8 +7,11 @@ export interface Feed {
   snippetId: number;
   snippetText: string;
   reason: string;
+  sentenceText: string;
   textToSearch: string;
   themes: string[];
+  startSentence: number;
+  endSentence: number;
 }
 
 @Injectable()
@@ -42,6 +45,9 @@ export class FeedService {
       snippetId: snippet.id as number,
       snippetText: snippet.snippetText,
       reason: snippet.reason,
+      startSentence: snippet.startSentence,
+      endSentence: snippet.endSentence,
+      sentenceText: snippet.sentenceText,
       textToSearch: snippet.sentenceText.split(' ').slice(0, 8).join(' '),
       themes: snippet.themes.map(theme => theme.name),
     };

@@ -17,16 +17,14 @@ export class FeedRepository {
     });
   }
 
-  async getNSnippets(limit: number): Promise<Snippet[]> {
-    return this.dataSource.getRepository(Snippet).find({
-      take: limit,
-      relations: ['book', 'themes'],
-      select: {
-        book: {
-          id: true,
-        },
-      },
-    });
+  async getNSnippets(limit?: number): Promise<Snippet[]> {
+    return this.dataSource.getRepository(Snippet)
+      .createQueryBuilder('snippet')
+      .leftJoinAndSelect('snippet.book', 'book')
+      .leftJoinAndSelect('snippet.themes', 'themes')
+      .orderBy('RANDOM()') // PostgreSQL
+      .limit(limit || 10)
+      .getMany();
   }
 
   async getFeedByBookIdAndLimit(bookId: number, limit?: number): Promise<Snippet[]> {

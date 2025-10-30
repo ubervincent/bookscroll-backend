@@ -15,11 +15,11 @@ export const databaseProviders = [
 
 export const dataSource = new DataSource({
   type: 'postgres',
-  host: 'localhost',
+  host: process.env.DB_HOST || 'localhost',
   port: 5432,
-  username: 'postgres',
-  password: 'postgress', 
-  database: 'bookscroll',
+  username: process.env.DB_USERNAME || 'postgres',
+  password: process.env.DB_PASSWORD || 'postgress', 
+  database: process.env.DB_DATABASE || 'bookscroll',
   entities: [process.env.NODE_ENV === 'development' ? 'src/**/*.entity{.ts,.js}' : 'dist/**/*.entity{.ts,.js}'],
   synchronize: true,
 });

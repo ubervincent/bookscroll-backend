@@ -49,7 +49,6 @@ export class EpubParserService {
         const text = await this.getChapterRawAsync(epub, chapter);
         const type = this.typeOfText(text as string);
         const $ = cheerio.load(text as string, { xmlMode: type === 'xml' || type === 'xhtml' });
-        logger.log(`Total number of elements: ${$('*').length}`);
 
         const sentences = $(tags.join(','))
             .toArray()

@@ -84,12 +84,18 @@ export class SnippetExtractionService {
     let snippets: Snippet[] = [];
     const limit = pLimit(MAX_CONCURRENT_REQUESTS);
 
-    await Promise.all(paragraphs.slice(0, 3).map((paragraph, index) => limit(async () => {
+    await Promise.all(paragraphs.map((paragraph, index) => limit(async () => {
+      logger.log(`Calling OpenAI for paragraph ${index}/${paragraphs.length}`);
+
+
       const result = await this.callOpenAI(paragraph, index);
       snippets = [...snippets, ...result.snippets.map(snippet => ({
         ...snippet,
         sentenceText: this.getSnippetTextFromIndices(book, snippet.startSentence, snippet.endSentence),
       }))];
+
+      logger.log(`OpenAI responded for paragraph ${index}/${paragraphs.length}`);
+
     })));
 
     return snippets;
@@ -113,8 +119,6 @@ export class SnippetExtractionService {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    logger.log(`Calling OpenAI for paragraph ${paragraphIndex}`);
-
     const response = await client.responses.parse({
       model: "gpt-5-nano-2025-08-07",
       reasoning: { effort: "minimal" },
@@ -132,8 +136,6 @@ export class SnippetExtractionService {
         format: zodTextFormat(SnippetsSchema, "snippets"),
       }
     });
-
-    logger.log(`OpenAI response: ${response.output_parsed} for paragraph ${paragraphIndex}`);
 
     return response.output_parsed as { snippets: SnippetResponse[] };
   }
