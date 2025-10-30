@@ -1,4 +1,4 @@
-import { Injectable, Logger, } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, } from '@nestjs/common';
 import { Snippet, SnippetExtractionService } from './snippet-extraction.service';
 import { ProcessedSentence, EpubParserService } from './epub-parser.service';
 import { FileStorageService } from './file-storage.service';
@@ -28,6 +28,9 @@ export class BookService {
   async upload(file: Express.Multer.File) {
     const filePath = this.fileStorageService.saveBook(file);
     let book = await this.epubParserService.parseEpub(await filePath);
+
+    await this.fileStorageService.deleteBook(await filePath);
+
     const snippets = await this.snippetExtractionService.getSnippetFromBook(book);
 
     const bookEntity = await this.bookRepository.saveBook(this.toBookEntity(book));
@@ -42,10 +45,52 @@ export class BookService {
     await this.bookRepository.saveSnippetsByBook(bookEntity, snippetsEntities);
 
     return {
-      message: `Book ${book.title} uploaded successfully`,
-      snippets: snippets,
-    };
+      message: `Book ${bookEntity.id} - ${bookEntity.title} uploaded successfully`,
+    };  
 
+  }
+
+  async getBookSentencesByIndices(bookId: number, startSentence: number, endSentence: number) {
+    const book = await this.bookRepository.getBookById(bookId);
+
+    if (!book) {
+      throw new NotFoundException(`Book with id ${bookId} not found`);
+    }
+
+    const from = Math.min(startSentence, endSentence);
+    const to = Math.max(startSentence, endSentence);
+
+    const window = 1;
+
+    return {
+      bookId: book.id,
+      bookTitle: book.title,
+      bookAuthor: book.author,
+      startSentence: from,
+      endSentence: to,
+      fullSentence: this.getSentence(book.sentences, from, to),
+      previousSentence: this.getSentence(book.sentences, from - window, from),
+      nextSentence: this.getSentence(book.sentences, to, to + window),
+    };
+  }
+
+  async deleteById(id: number) {
+    const book = await this.bookRepository.getBookById(id);
+    if (!book) {
+      throw new NotFoundException(`Book with id ${id} not found`);
+    }
+    await this.bookRepository.deleteBook(book);
+    return { message: `Book with id ${id} deleted successfully` };
+  }
+
+  private getSentence(sentences: Record<number, string>, from: number, to: number): string {
+    const totalSentences = Object.keys(sentences).length;
+    if (from < 1 || to > totalSentences) {
+      return '';
+    }
+    return Array.from({ length: to - from + 1 }, (_, i) => from + i + 1)
+      .map(index => sentences[index])
+      .join(' ');
   }
 
   private toSnippetEntity(snippet: Snippet, savedThemesEntities: ThemeEntity[]): SnippetEntity {

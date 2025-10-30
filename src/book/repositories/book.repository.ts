@@ -1,4 +1,4 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import { Injectable, Logger, Inject, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Book  } from '../entities/book.entity';
 import { Snippet  } from '../entities/snippet.entity';
@@ -22,6 +22,18 @@ export class BookRepository {
   async upsertThemesByName(themes: Theme[]) {
     await this.dataSource.getRepository(Theme).upsert(themes, { conflictPaths: ['name'] });
     return await this.dataSource.getRepository(Theme).find();
+  }
+
+  async getBookById(id: number): Promise<Book> {
+    const book = await this.dataSource.getRepository(Book).findOne({ where: { id }, relations: ['snippets', 'snippets.themes'] });
+    if (!book) {
+      throw new NotFoundException(`Book with id ${id} not found`);
+    }
+    return book;
+  }
+
+  async deleteBook(book: Book) {
+    await this.dataSource.getRepository(Book).remove(book);
   }
 
   async getSnippetsByBookId(id: number): Promise<Snippet[]> {

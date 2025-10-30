@@ -19,11 +19,11 @@ export class Snippet {
     @Column()
     reason: string;
 
-    @ManyToMany(() => Theme, { cascade: true })
+    @ManyToMany(() => Theme, { cascade: true },)
     @JoinTable()
     themes: Theme[];
 
-    @ManyToOne(() => Book, (book) => book.id)
+    @ManyToOne(() => Book, (book) => book.id, { onDelete: 'CASCADE' })
     book: Book;
 
     @Column()

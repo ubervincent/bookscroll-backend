@@ -22,4 +22,9 @@ export class FileStorageService {
     
         return newFilePath;
       }
+
+  async deleteBook(filePath: string) {
+    await fs.promises.unlink(filePath);
+    return { message: `Book file deleted successfully` };
+  }
 }
