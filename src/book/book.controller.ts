@@ -3,6 +3,7 @@ import { BookService } from './services/book.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileSizeValidationPipe } from './pipes/file-size-validation.pipe';
 import { FileTypeValidationPipe } from './pipes/file-type-validation.pipe';
+import { SentencesResponseDto } from './dto/book.dto';
 
 @Controller('book')
 export class BookController {
@@ -30,7 +31,7 @@ export class BookController {
     @Param('bookId', ParseIntPipe) bookId: number,
     @Query('start', ParseIntPipe) startSentence: number,
     @Query('end', ParseIntPipe) endSentence: number,
-  ) {
+  ) : Promise<SentencesResponseDto>{
 
     if (!startSentence || !endSentence) {
       throw new BadRequestException('Start sentence and end sentence are required');

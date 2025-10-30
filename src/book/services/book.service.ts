@@ -6,6 +6,7 @@ import { BookRepository } from '../repositories/book.repository';
 import { Book as BookEntity } from '../entities/book.entity';
 import { Snippet as SnippetEntity } from '../entities/snippet.entity';
 import { Theme as ThemeEntity } from '../entities/theme.entity';
+import { SentencesResponseDto } from '../dto/book.dto';
 
 export interface Book {
   title: string;
@@ -50,7 +51,7 @@ export class BookService {
 
   }
 
-  async getBookSentencesByIndices(bookId: number, startSentence: number, endSentence: number) {
+  async getBookSentencesByIndices(bookId: number, startSentence: number, endSentence: number) : Promise<SentencesResponseDto> {
     const book = await this.bookRepository.getBookById(bookId);
 
     if (!book) {
@@ -62,7 +63,7 @@ export class BookService {
 
     const window = 1;
 
-    return {
+    const response: SentencesResponseDto = {
       bookId: book.id,
       bookTitle: book.title,
       bookAuthor: book.author,
@@ -72,6 +73,8 @@ export class BookService {
       previousSentence: this.getSentence(book.sentences, from - window, from),
       nextSentence: this.getSentence(book.sentences, to, to + window),
     };
+
+    return response;
   }
 
   async deleteById(id: number) {

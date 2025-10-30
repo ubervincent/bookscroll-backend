@@ -1,26 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { FeedRepository } from './repositories/feed.repository';
 import { Snippet } from 'src/book/entities/snippet.entity';
-
-export interface Feed {
-  bookId: number;
-  bookTitle: string;
-  bookAuthor: string;
-  snippetId: number;
-  snippetText: string;
-  reason: string;
-  sentenceText: string;
-  textToSearch: string;
-  themes: string[];
-  startSentence: number;
-  endSentence: number;
-}
+import { FeedResponseDto } from './dto/feed.dto';
 
 @Injectable()
 export class FeedService {
   constructor(private readonly feedRepository: FeedRepository) {}
 
-  async getFeed(limit?: number): Promise<Feed[]> {
+  async getFeed(limit?: number): Promise<FeedResponseDto[]> {
     if (limit) {
       const snippets = await this.feedRepository.getNSnippets(limit);
       const feeds = snippets.map(snippet => this.toFeed(snippet));
@@ -32,22 +19,22 @@ export class FeedService {
     }
   }
 
-  async getFeedByBookIdAndLimit(bookId: number, limit?: number): Promise<Feed[]> {
+  async getFeedByBookIdAndLimit(bookId: number, limit?: number): Promise<FeedResponseDto[]> {
     const snippets = await this.feedRepository.getFeedByBookIdAndLimit(bookId, limit);
     return snippets.map(snippet => this.toFeed(snippet));
   }
 
-  async getFeedByTheme(theme: string, limit?: number): Promise<Feed[]> {
+  async getFeedByTheme(theme: string, limit?: number): Promise<FeedResponseDto[]> {
     const snippets = await this.feedRepository.getFeedByTheme(theme, limit);
     return snippets.map(snippet => this.toFeed(snippet));
   }
 
-  private randomizeFeed(feed: Feed[]): Feed[] {
+  private randomizeFeed(feed: FeedResponseDto[]): FeedResponseDto[] {
     return feed.sort(() => Math.random() - 0.5);
   }
 
-  private toFeed(snippet: Snippet): Feed {
-    return {
+  private toFeed(snippet: Snippet): FeedResponseDto {
+    const response: FeedResponseDto = {
       bookTitle: snippet.book.title as string,
       bookAuthor: snippet.book.author as string,
       bookId: snippet.book.id as number,
@@ -60,5 +47,6 @@ export class FeedService {
       textToSearch: snippet.sentenceText.split(' ').slice(0, 8).join(' '),
       themes: snippet.themes.map(theme => theme.name),
     };
+    return response;
   }
 }
