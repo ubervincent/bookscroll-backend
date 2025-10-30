@@ -16,4 +16,28 @@ export class FeedRepository {
       relations: ['book', 'themes'],
     });
   }
+
+  async getNSnippets(limit: number): Promise<Snippet[]> {
+    return this.dataSource.getRepository(Snippet).find({
+      take: limit,
+      relations: ['book', 'themes'],
+      select: {
+        book: {
+          id: true,
+        },
+      },
+    });
+  }
+
+  async getFeedByBookId(bookId: number): Promise<Snippet[]> {
+    return this.dataSource.getRepository(Snippet).find({
+      where: { book: { id: bookId } },
+      select: {
+        book: {
+          id: true,
+        },
+      },
+      relations: ['book', 'themes'],
+    });
+  }
 }

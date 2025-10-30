@@ -15,9 +15,25 @@ export interface Feed {
 export class FeedService {
   constructor(private readonly feedRepository: FeedRepository) {}
 
-  async getFeed(): Promise<Feed[]> {
-    const snippets = await this.feedRepository.getFeed();
+  async getFeed(limit?: number): Promise<Feed[]> {
+    if (limit) {
+      const snippets = await this.feedRepository.getNSnippets(limit);
+      const feeds = snippets.map(snippet => this.toFeed(snippet));
+      return this.randomizeFeed(feeds);
+    } else {
+      const snippets = await this.feedRepository.getFeed();
+      const feeds = snippets.map(snippet => this.toFeed(snippet));
+      return this.randomizeFeed(feeds);
+    }
+  }
+
+  async getFeedByBookId(bookId: number): Promise<Feed[]> {
+    const snippets = await this.feedRepository.getFeedByBookId(bookId);
     return snippets.map(snippet => this.toFeed(snippet));
+  }
+
+  private randomizeFeed(feed: Feed[]): Feed[] {
+    return feed.sort(() => Math.random() - 0.5);
   }
 
   private toFeed(snippet: Snippet): Feed {

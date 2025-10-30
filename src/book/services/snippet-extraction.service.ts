@@ -44,7 +44,9 @@ const MAX_CONCURRENT_REQUESTS = 15;
 const JOIN_SENTENCES_THRESHOLD = 25;
 
 const SYSTEM_INSTRUCTIONS = `
-You are a social media expert that extracts and paraphrases social media worthy, coherent, inspirational shareable, highly quotable snippets that stand on its own for scrolling purposes.
+You are a social media expert that extracts and paraphrases social media worthy,
+ 
+coherent, inspirational shareable, highly quotable snippets about key ideas and concepts in the book that stand on its own for scrolling purposes.
 
 Don't include any text that doesn't make sense without its context, doesn't make sense on its own or can't be quoted and shared. 
 
