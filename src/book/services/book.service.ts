@@ -61,6 +61,9 @@ export class BookService {
     const to = Math.max(startSentence, endSentence);
 
     const windowResult = await this.bookRepository.getSentenceWindowByIndices(bookId, from, to);
+
+    const totalSentences = await this.bookRepository.getTotalSentences(bookId);
+
     if (!windowResult) {
       throw new NotFoundException(`Book with id ${bookId} not found`);
     }
@@ -69,6 +72,7 @@ export class BookService {
       bookId: bookId,
       bookTitle: windowResult.title ?? '',
       bookAuthor: windowResult.author ?? '',
+      totalSentences: totalSentences,
       startSentence: from,
       endSentence: to,
       fullSentence: windowResult.fullText,

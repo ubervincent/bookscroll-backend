@@ -5,6 +5,7 @@ export class FeedResponseDto {
   snippetId?: number;
   snippetText?: string;
   reason?: string;
+  totalSnippets?: number;
   sentenceText?: string;
   textToSearch?: string;
   themes?: string[];

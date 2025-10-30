@@ -2,6 +2,7 @@ export class SentencesResponseDto {
   bookId?: number;
   bookTitle?: string;
   bookAuthor?: string;
+  totalSentences: number;
   startSentence: number;
   endSentence: number;
   fullSentence: string;

@@ -51,6 +51,21 @@ export class BookRepository {
     });
   }
 
+  async getTotalSentences(bookId: number): Promise<number> {
+    const rows = await this.dataSource.query(
+      `
+      select (
+        select count(*) 
+        from jsonb_each_text(b.sentences) e
+      ) as count
+      from book b
+      where b.id = $1
+      `,
+      [bookId]
+    );
+    return parseInt(rows[0].count, 10) || 0;
+  }
+
   async getSentenceWindowByIndices(
     bookId: number,
     from: number,

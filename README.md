@@ -47,11 +47,13 @@
       "bookAuthor": "...",
       "startSentence": 1,
       "endSentence": 10,
+      "totalSentences": 100,
       "fullSentence": "<joined sentences or empty>",
       "previousSentence": "<previous sentence or empty>",
       "nextSentence": "<next sentence or empty>"
     }
     ```
+  Note: `totalSentences` is the total number of sentences in the book.
 
 - **GET /feed?limit=NUMBER**
   - **Description**: Get randomized feed of snippet cards.
@@ -64,6 +66,7 @@
       "bookAuthor": "...",
       "snippetId": 10,
       "snippetText": "...",
+      "totalSnippets": 100,
       "reason": "...",
       "sentenceText": "...",
       "textToSearch": "first 8 words...",
