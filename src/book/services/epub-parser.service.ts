@@ -3,10 +3,6 @@ import { EPub } from 'epub2';
 import * as cheerio from 'cheerio';
 import { Book } from './book.service';
 import { Logger } from '@nestjs/common';
-import OpenAI from 'openai';
-import Groq from 'groq-sdk'
-import { zodTextFormat } from 'openai/helpers/zod.mjs';
-import { z } from 'zod';
 
 const logger = new Logger('EpubParserService');
 
@@ -60,17 +56,8 @@ export class EpubParserService {
 
         for (const chapter of epub.flow) {
 
-            const rejectChapter = await this.rejectChapter(chapter.id);
+            logger.log(`Chapter ${chapter.id} with title ${chapter.title} accepted`);
 
-            if (rejectChapter) {
-                logger.log(`Chapter ${chapter.id} rejected`);
-                continue;
-            }
-
-
-            logger.log(`Chapter ${chapter.id} accepted`);
-
-            
             const chapterSentences = await this.getProcessedSentences(
                 chapter.id,
                 epub,
@@ -124,40 +111,6 @@ export class EpubParserService {
         }
 
         return processedSentences;
-    }
-
-    private async rejectChapter(chapter: string): Promise<boolean> {
-
-        const groq = new Groq({
-            apiKey: process.env.GROQ_API_KEY,
-        });
-
-        const response = await groq.chat.completions.create({
-            model: GROQ_MODEL,
-            messages: [
-                { role: "system", content: SYSTEM_INSTRUCTIONS },
-                { role: "user", content: `Discern this section of the book: ${chapter}` },
-            ],
-            response_format: {
-                type: "json_schema",
-                json_schema: {
-                  name: "rejectChapter",
-                  schema: {
-                    type: "object",
-                    properties: {
-                      rejectChapter: { type: "boolean" },
-                    },
-                    required: ["rejectChapter"],
-                    additionalProperties: false
-                  }
-                },
-            },
-
-        });
-        
-        const result = JSON.parse(response.choices[0].message.content || "{}");
-
-        return result.rejectChapter ?? false;
     }
 
     private typeOfText(text: string) {
