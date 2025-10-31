@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { EPub } from 'epub2';
 import * as cheerio from 'cheerio';
 import { Book } from './book.service';
@@ -91,6 +91,10 @@ export class EpubParserService {
             let globalSentenceIndex = 0;
 
             logger.log(`Total chapters: ${epub.flow.length}`);
+
+            if (epub.flow.length === 0) {
+                throw new BadRequestException('Epub has no chapters');
+            }
 
             for (const chapter of epub.flow) {
                 const chapterSentences = await this.getProcessedSentences(

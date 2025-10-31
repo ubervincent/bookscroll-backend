@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, ILike } from 'typeorm';
 import { Snippet } from 'src/book/entities/snippet.entity';
 
 @Injectable()
@@ -17,6 +17,18 @@ export class FeedRepository {
       },
       relations: ['book', 'themes'],
     });
+  }
+
+  async getTotalSnippets(): Promise<number> {
+    return this.dataSource.getRepository(Snippet).count();
+  }
+
+  async getTotalSnippetsByBookId(bookId: number): Promise<number> {
+    return this.dataSource.getRepository(Snippet).count({ where: { book: { id: bookId } } });
+  }
+
+  async getTotalSnippetsByTheme(theme: string): Promise<number> {
+    return this.dataSource.getRepository(Snippet).count({ where: { themes: { name: ILike(`%${theme}%`) } } });
   }
 
   async getNSnippets(limit?: number): Promise<Snippet[]> {

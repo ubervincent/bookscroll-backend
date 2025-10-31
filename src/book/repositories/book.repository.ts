@@ -87,14 +87,14 @@ export class BookRepository {
           (
             select string_agg(e.value, ' ' order by (e.key)::int)
             from jsonb_each_text(b.sentences) e
-            where (e.key)::int between $2-1 and $2
+            where (e.key)::int = $2-1
           ), ''
         ) as "prevText",
         coalesce(
           (
             select string_agg(e.value, ' ' order by (e.key)::int)
             from jsonb_each_text(b.sentences) e
-            where (e.key)::int between $3 and $3+1
+            where (e.key)::int = $3+1
           ), ''
         ) as "nextText"
       from book b

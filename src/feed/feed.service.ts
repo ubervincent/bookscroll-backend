@@ -7,26 +7,24 @@ import { FeedResponseDto } from './dto/feed.dto';
 export class FeedService {
   constructor(private readonly feedRepository: FeedRepository) {}
 
-  async getFeed(limit?: number): Promise<FeedResponseDto[]> {
-    if (limit) {
-      const snippets = await this.feedRepository.getNSnippets(limit);
-      const feeds = snippets.map(snippet => this.toFeed(snippet, snippets.length));
-      return this.randomizeFeed(feeds);
-    } else {
-      const snippets = await this.feedRepository.getFeed();
-      const feeds = snippets.map(snippet => this.toFeed(snippet, snippets.length));
-      return this.randomizeFeed(feeds);
-    }
+  async getFeed(limit: number): Promise<FeedResponseDto[]> {
+    const snippets = await this.feedRepository.getNSnippets(limit);
+    const totalSnippets = await this.feedRepository.getTotalSnippets();
+    return snippets.map(snippet => this.toFeed(snippet, totalSnippets));
   }
 
   async getFeedByBookIdAndLimit(bookId: number, limit?: number): Promise<FeedResponseDto[]> {
     const snippets = await this.feedRepository.getFeedByBookIdAndLimit(bookId, limit);
-    return snippets.map(snippet => this.toFeed(snippet, snippets.length));
+    const totalSnippets = await this.feedRepository.getTotalSnippetsByBookId(bookId);
+    const feeds = snippets.map(snippet => this.toFeed(snippet, totalSnippets));
+    return this.randomizeFeed(feeds);
   }
 
   async getFeedByTheme(theme: string, limit?: number): Promise<FeedResponseDto[]> {
     const snippets = await this.feedRepository.getFeedByTheme(theme, limit);
-    return snippets.map(snippet => this.toFeed(snippet, snippets.length));
+    const totalSnippets = await this.feedRepository.getTotalSnippetsByTheme(theme);
+    const feeds = snippets.map(snippet => this.toFeed(snippet, totalSnippets));
+    return this.randomizeFeed(feeds);
   }
 
   private randomizeFeed(feed: FeedResponseDto[]): FeedResponseDto[] {

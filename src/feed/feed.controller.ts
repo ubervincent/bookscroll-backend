@@ -1,6 +1,7 @@
-import { Controller, Get, Query, Param, ParseIntPipe} from '@nestjs/common';
+import { Controller, Get, Query, Param, ParseIntPipe, BadRequestException} from '@nestjs/common';
 import { FeedService } from './feed.service';
 import { FeedResponseDto } from './dto/feed.dto';
+import { LimitValidationPipe } from './pipes/limit-validation.pipe';
 
 @Controller('feed')
 export class FeedController {
@@ -8,15 +9,16 @@ export class FeedController {
 
   @Get()
   async getFeed(
-    @Query('limit') limit?: number, 
+    @Query('limit', new LimitValidationPipe()) limit: number, 
   ) : Promise<FeedResponseDto[]> {
+    
     return await this.feedService.getFeed(limit);
   }
 
   @Get('book/:bookId')
   async getFeedByBookId(
     @Param('bookId', ParseIntPipe) bookId: number,
-    @Query('limit') limit?: number,
+    @Query('limit', new LimitValidationPipe()) limit: number,
   ) : Promise<FeedResponseDto[]> {
     return await this.feedService.getFeedByBookIdAndLimit(bookId, limit);
   }
@@ -24,7 +26,7 @@ export class FeedController {
   @Get('theme/:theme')
   async getFeedByTheme(
     @Param('theme') theme: string,
-    @Query('limit') limit?: number,
+    @Query('limit', new LimitValidationPipe()) limit: number,
   ) : Promise<FeedResponseDto[]> {
     return await this.feedService.getFeedByTheme(theme, limit);
   }
