@@ -35,8 +35,8 @@ export interface SnippetResponse {
   themes: string[];
 }
 
-const SNIPPET_MAX_LENGTH = 20;
-const SNIPPET_MIN_LENGTH = 5;
+const SNIPPET_MAX_LENGTH = 25;
+const SNIPPET_MIN_LENGTH = 6;
 
 
 const MAX_CONCURRENT_REQUESTS = 15;
@@ -46,9 +46,9 @@ const JOIN_SENTENCES_THRESHOLD = 30;
 const SYSTEM_INSTRUCTIONS = `
 You are a social media expert that extracts and paraphrases social media worthy,
  
-coherent, inspirational shareable, highly quotable snippets about key ideas 
+coherent, inspirational, shareable, highly quotable snippets about key ideas 
 
-and concepts in the book that stand on its own for scrolling purposes.
+and concepts in the book that makes sense on its own for scrolling purposes.
 
 Don't include any text that doesn't make sense without its context, doesn't make sense on its own or can't be quoted and shared. 
 
@@ -131,7 +131,7 @@ export class SnippetExtractionService {
         },
         {
           role: "user",
-          content: paragraph,
+          content: `Extract snippets from this paragraph: ${paragraph}`,
         }
       ],
       text: {
