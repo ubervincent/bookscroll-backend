@@ -3,7 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class LimitValidationPipe implements PipeTransform {
-  transform(value: number): number {
+  transform(value: number, metadata: ArgumentMetadata): number {
     if (value <= 0) {
       throw new BadRequestException('Limit must be greater than 0');
     }
