@@ -52,7 +52,9 @@ and concepts in the book that makes sense on its own for scrolling purposes.
 
 Don't include any text that doesn't make sense without its context, doesn't make sense on its own or can't be quoted and shared. 
 
-Sometimes you're given a paragraph that is not relevant to the book, like copyright text or chapter titles. In these cases, don't choose any sentences from it.
+If there is no good reason to extract a snippet, return an empty array.
+
+Sometimes you're given a paragraph that is not relevant to the book, like copyright text or chapter titles or citations. In these cases, don't choose any sentences from it.
 
 Extract the themes of the snippet and return them in the themes array. The themes should be broad and general and in lower case.
 
@@ -62,7 +64,6 @@ The snippets should be no more than ${SNIPPET_MAX_LENGTH} words.
 
 The snippets should be no less than ${SNIPPET_MIN_LENGTH} words.
 
-You have the freedom to return absolutely nothing if no snippets are found.
 `;
 
 const logger = new Logger('SnippetExtractionService');
