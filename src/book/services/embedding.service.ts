@@ -9,10 +9,10 @@ const MAX_CONCURRENT_REQUESTS = 15;
 
 @Injectable()
 export class EmbeddingService {
-  async getEmbeddingsFromSnippets(snippets: SnippetEntity[]) {
+  async getEmbeddingsFromSnippets(snippets: SnippetEntity[], progressPercentageMap: Map<number, number>, bookId: number) {
 
     const limit = pLimit(MAX_CONCURRENT_REQUESTS);
-  
+    let completeCount = 0;
     await Promise.all(
         snippets.map((snippetEntity) =>
           limit(async () => {
@@ -20,6 +20,12 @@ export class EmbeddingService {
             const embedding = await this.getEmbedding(snippetEntity.snippetText);
   
             snippetEntity.embedding = embedding;
+
+            completeCount++ ;
+            progressPercentageMap.set(bookId, 50 + Math.round(completeCount / snippets.length * 50));
+
+            logger.log(`Progress percentage: ${progressPercentageMap.get(bookId)}`);
+            logger.log(`OpenAI responded for embedding`);
 
           })));
 

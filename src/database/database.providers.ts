@@ -26,7 +26,7 @@ export const dataSource = new DataSource(
     entities: [process.env.NODE_ENV === 'development' ? 'src/**/*.entity{.ts,.js}' : 'dist/**/*.entity{.ts,.js}'],
     synchronize: true,
     url: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   } as DataSourceOptions : {
     type: 'postgres',
     host: process.env.DB_HOST || 'localhost',

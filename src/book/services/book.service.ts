@@ -29,40 +29,67 @@ export class BookService {
     private readonly embeddingService: EmbeddingService,
   ) { }
 
+  private progressPercentageMap = new Map<number, number>();
+  
   async upload(file: Express.Multer.File) {
     const filePath = this.fileStorageService.saveBook(file);
     let book = await this.epubParserService.parseEpub(await filePath);
 
     await this.fileStorageService.deleteBook(await filePath);
 
-    const snippets = await this.snippetExtractionService.getSnippetFromBook(book);
+    const bookEntity: BookEntity = await this.bookRepository.saveBook(this.toBookEntity(book));
 
-    const bookEntity = await this.bookRepository.saveBook(this.toBookEntity(book));
+    if (!bookEntity.id) {
+      throw new Error('Book ID is required');
+    }
 
-    
+    await this.bookRepository.updateBookStatus(bookEntity.id, 'processing');
+
+    this.extractSnippets(book, bookEntity);
+
+    return {
+      message: `Book ${bookEntity.id} - ${bookEntity.title} processing started`,
+    }
+  }
+  
+  private async extractSnippets(book: Book, bookEntity: BookEntity ) {
+    const snippets = await this.snippetExtractionService.getSnippetFromBook(
+      book, 
+      this.progressPercentageMap,
+      bookEntity.id!
+    );
+
     const themes = this.getAllUniqueThemes(snippets);
     const themesEntities = themes.map(theme => this.toThemeEntity(theme));
     const savedThemesEntities = await this.bookRepository.upsertThemesByName(themesEntities);
-    
-    
+
     const snippetsEntities = snippets.map(snippet => this.toSnippetEntity(snippet, savedThemesEntities));
-    
-    const snippetsEntitiesWithEmbeddings = await this.embeddingService.getEmbeddingsFromSnippets(snippetsEntities);
+
+    const snippetsEntitiesWithEmbeddings = await this.embeddingService.getEmbeddingsFromSnippets(
+      snippetsEntities, 
+      this.progressPercentageMap, 
+      bookEntity.id!
+    );
+
+    await this.bookRepository.updateBookStatus(bookEntity.id!, 'completed');
 
     await this.bookRepository.saveSnippetsByBook(bookEntity, snippetsEntitiesWithEmbeddings);
-
-    return {
-      message: `Book ${bookEntity.id} - ${bookEntity.title} uploaded successfully`,
-    };  
-
   }
 
-  async getAllBooks() : Promise<BookResponseDto[]> {
+  async getBookProcessingStatus(bookId: number) {
+    const status = await this.bookRepository.getBookStatus(bookId);
+    return {
+      status: status,
+      progressPercentage: this.progressPercentageMap.get(bookId) ?? 100,
+    };
+  }
+
+  async getAllBooks(): Promise<BookResponseDto[]> {
     const books = await this.bookRepository.getAllBooks();
     return books;
   }
 
-  async getBookSentencesByIndices(bookId: number, startSentence: number, endSentence: number) : Promise<SentencesResponseDto> {
+  async getBookSentencesByIndices(bookId: number, startSentence: number, endSentence: number): Promise<SentencesResponseDto> {
     const from = Math.min(startSentence, endSentence);
     const to = Math.max(startSentence, endSentence);
 

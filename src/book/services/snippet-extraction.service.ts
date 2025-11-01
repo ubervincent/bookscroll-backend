@@ -70,7 +70,7 @@ const logger = new Logger('SnippetExtractionService');
 @Injectable()
 export class SnippetExtractionService {
 
-  async getSnippetFromBook(book: Book) {
+  async getSnippetFromBook(book: Book, progressPercentageMap: Map<number, number>, bookId: number) {
 
     const sentences = Object.entries(book.sentences);
     const taggedSentences = sentences.map(([index, sentence]) => `<${index}>${sentence}</${index}>`);
@@ -86,11 +86,12 @@ export class SnippetExtractionService {
     let snippets: Snippet[] = [];
     const limit = pLimit(MAX_CONCURRENT_REQUESTS);
 
+    let completeCount = 0;
+
     await Promise.all(
       paragraphs.map((paragraph, index) =>
         limit(async () => {
           logger.log(`Calling OpenAI for paragraph ${index}/${paragraphs.length}`);
-
 
           const result = await this.callOpenAI(paragraph, index);
 
@@ -99,6 +100,10 @@ export class SnippetExtractionService {
             sentenceText: this.getSentenceTextFromIndices(book, snippet.startSentence, snippet.endSentence),
           }))];
 
+          completeCount++ ;
+          progressPercentageMap.set(bookId, Math.round(completeCount / paragraphs.length * 50));
+
+          logger.log(`Progress percentage: ${progressPercentageMap.get(bookId)}`);
           logger.log(`OpenAI responded for paragraph ${index}/${paragraphs.length}`);
 
         })));

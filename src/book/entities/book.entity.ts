@@ -15,6 +15,9 @@ export class Book {
     @Column({ type: 'jsonb' })
     sentences: Record<number, string>;
 
+    @Column({ nullable: true })
+    status?: 'processing' | 'completed' | 'failed';
+
     @OneToMany(() => Snippet, (snippet) => snippet.book, { cascade: true })
     @JoinTable()
     snippets: Snippet[];

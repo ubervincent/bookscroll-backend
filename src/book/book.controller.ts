@@ -52,4 +52,11 @@ export class BookController {
 
     return await this.bookService.getBookSentencesByIndices(bookId, startSentence, endSentence);
   }
+
+  @Get(':bookId/status')
+  async getBookProcessingStatus(
+    @Param('bookId', ParseIntPipe) bookId: number,
+  ) {
+    return await this.bookService.getBookProcessingStatus(bookId);
+  }
 }

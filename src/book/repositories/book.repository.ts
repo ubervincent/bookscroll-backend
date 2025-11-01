@@ -32,6 +32,18 @@ export class BookRepository {
     return book;
   }
 
+  async updateBookStatus(id: number, status: 'processing' | 'completed' | 'failed') {
+    await this.dataSource.getRepository(Book).update(id, { status });
+  }
+
+  async getBookStatus(id: number) {
+    const book = await this.dataSource.getRepository(Book).findOne({ where: { id }, select: ['status'] });
+    if (!book) {
+      throw new NotFoundException(`Book with id ${id} not found`);
+    }
+    return book.status;
+  }
+
   async deleteBook(id: number) : Promise<{ message: string }> {
     await this.dataSource.getRepository(Book).delete(id);
     return { message: `Book with id ${id} deleted successfully` };
