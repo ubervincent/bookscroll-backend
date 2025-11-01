@@ -82,7 +82,7 @@ export class BookService {
     return {
       id: bookId,
       status: status,
-      progressPercentage: this.progressPercentageMap.get(bookId) ?? 100,
+      progressPercentage: this.progressPercentageMap.get(bookId) ?? 0,
     };
   }
 
