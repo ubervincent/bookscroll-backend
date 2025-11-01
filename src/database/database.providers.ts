@@ -6,6 +6,13 @@ export const databaseProviders = [
     useFactory: async () => {
       if (!dataSource.isInitialized) {
         await dataSource.initialize();
+
+        try {
+          await dataSource.query('CREATE EXTENSION IF NOT EXISTS vector');
+          console.log('pgvector extension enabled');
+        } catch (error) {
+          console.warn('Could not enable pgvector extension:', error.message);
+        }
       }
 
       return dataSource;
@@ -25,7 +32,7 @@ export const dataSource = new DataSource(
     host: process.env.DB_HOST || 'localhost',
     port: 5432,
     username: process.env.DB_USERNAME || 'postgres',
-    password: process.env.DB_PASSWORD || 'postgress', 
+    password: process.env.DB_PASSWORD || 'postgress',
     database: process.env.DB_DATABASE || 'bookscroll',
     entities: [process.env.NODE_ENV === 'development' ? 'src/**/*.entity{.ts,.js}' : 'dist/**/*.entity{.ts,.js}'],
     synchronize: true,

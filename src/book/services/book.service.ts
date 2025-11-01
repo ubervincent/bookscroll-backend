@@ -7,6 +7,7 @@ import { Book as BookEntity } from '../entities/book.entity';
 import { Snippet as SnippetEntity } from '../entities/snippet.entity';
 import { Theme as ThemeEntity } from '../entities/theme.entity';
 import { SentencesResponseDto, BookResponseDto } from '../dto/book.dto';
+import { EmbeddingService } from './embedding.service';
 
 export interface Book {
   title: string;
@@ -17,6 +18,7 @@ export interface Book {
 
 const logger = new Logger('BookService');
 
+
 @Injectable()
 export class BookService {
   constructor(
@@ -24,6 +26,7 @@ export class BookService {
     private readonly epubParserService: EpubParserService,
     private readonly bookRepository: BookRepository,
     private readonly fileStorageService: FileStorageService,
+    private readonly embeddingService: EmbeddingService,
   ) { }
 
   async upload(file: Express.Multer.File) {
@@ -41,9 +44,12 @@ export class BookService {
     const themesEntities = themes.map(theme => this.toThemeEntity(theme));
     const savedThemesEntities = await this.bookRepository.upsertThemesByName(themesEntities);
     
+    
     const snippetsEntities = snippets.map(snippet => this.toSnippetEntity(snippet, savedThemesEntities));
+    
+    const snippetsEntitiesWithEmbeddings = await this.embeddingService.getEmbeddingsFromSnippets(snippetsEntities);
 
-    await this.bookRepository.saveSnippetsByBook(bookEntity, snippetsEntities);
+    await this.bookRepository.saveSnippetsByBook(bookEntity, snippetsEntitiesWithEmbeddings);
 
     return {
       message: `Book ${bookEntity.id} - ${bookEntity.title} uploaded successfully`,

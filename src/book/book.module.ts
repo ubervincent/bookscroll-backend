@@ -6,6 +6,7 @@ import { EpubParserService } from './services/epub-parser.service';
 import { FileStorageService } from './services/file-storage.service';
 import { DatabaseModule } from 'src/database/database.module';
 import { BookRepository } from './repositories/book.repository';
+import { EmbeddingService } from './services/embedding.service';
 
 @Module({
   controllers: [BookController],
@@ -14,6 +15,7 @@ import { BookRepository } from './repositories/book.repository';
     SnippetExtractionService,
     EpubParserService,
     FileStorageService,
+    EmbeddingService,
     BookRepository,
   ],
   imports: [DatabaseModule],

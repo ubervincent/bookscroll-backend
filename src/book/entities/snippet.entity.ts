@@ -28,4 +28,7 @@ export class Snippet {
 
     @Column()
     sentenceText: string;
+
+    @Column({ type: 'vector', nullable: true})
+    embedding: number[];
 }

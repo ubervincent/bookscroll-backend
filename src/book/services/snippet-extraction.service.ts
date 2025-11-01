@@ -86,24 +86,27 @@ export class SnippetExtractionService {
     let snippets: Snippet[] = [];
     const limit = pLimit(MAX_CONCURRENT_REQUESTS);
 
-    await Promise.all(paragraphs.map((paragraph, index) => limit(async () => {
-      logger.log(`Calling OpenAI for paragraph ${index}/${paragraphs.length}`);
+    await Promise.all(
+      paragraphs.map((paragraph, index) =>
+        limit(async () => {
+          logger.log(`Calling OpenAI for paragraph ${index}/${paragraphs.length}`);
 
 
-      const result = await this.callOpenAI(paragraph, index);
-      snippets = [...snippets, ...result.snippets.map(snippet => ({
-        ...snippet,
-        sentenceText: this.getSnippetTextFromIndices(book, snippet.startSentence, snippet.endSentence),
-      }))];
+          const result = await this.callOpenAI(paragraph, index);
 
-      logger.log(`OpenAI responded for paragraph ${index}/${paragraphs.length}`);
+          snippets = [...snippets, ...result.snippets.map(snippet => ({
+            ...snippet,
+            sentenceText: this.getSentenceTextFromIndices(book, snippet.startSentence, snippet.endSentence),
+          }))];
 
-    })));
+          logger.log(`OpenAI responded for paragraph ${index}/${paragraphs.length}`);
+
+        })));
 
     return snippets;
   }
 
-  private getSnippetTextFromIndices(book: Book, startIndex: number, endIndex: number) {
+  private getSentenceTextFromIndices(book: Book, startIndex: number, endIndex: number) {
     const from = Math.min(startIndex, endIndex);
     const to = Math.max(startIndex, endIndex);
     const parts: string[] = [];
