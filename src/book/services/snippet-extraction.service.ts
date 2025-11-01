@@ -41,7 +41,7 @@ const SNIPPET_MIN_LENGTH = 6;
 
 const MAX_CONCURRENT_REQUESTS = 15;
 
-const JOIN_SENTENCES_THRESHOLD = 30;
+const JOIN_SENTENCES_THRESHOLD = 20;
 
 const SYSTEM_INSTRUCTIONS = `
 You are a social-media content editor.  
