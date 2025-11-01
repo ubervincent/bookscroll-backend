@@ -3,6 +3,7 @@ import { EPub } from 'epub2';
 import * as cheerio from 'cheerio';
 import { Book } from './book.service';
 import { Logger } from '@nestjs/common';
+import { Groq } from 'groq-sdk';
 
 const logger = new Logger('EpubParserService');
 
@@ -54,30 +55,56 @@ export class EpubParserService {
             throw new BadRequestException('Epub has no chapters');
         }
 
+        const chaptersAreDiscernable = await this.areChapterDiscernable(epub.flow.map(chapter => chapter.id).join('\n'));
+
+        logger.log(`Chapters are ${chaptersAreDiscernable ? 'discernable' : 'not discernable'}`);
+
         for (const chapter of epub.flow) {
+            
+            if (chaptersAreDiscernable) {
+                if (await this.rejectChapter(chapter.id)) {
 
-            logger.log(`Chapter ${chapter.id} with title ${chapter.title} accepted`);
+                    logger.log(`Chapter ${chapter.id} with title ${chapter.title} rejected`);
+                    continue;
+                }
+                
+                logger.log(`Chapter ${chapter.id} with title ${chapter.title} accepted`);
+                
+                const chapterSentences = await this.getProcessedSentences(
+                    chapter.id,
+                    epub,
+                    globalSentenceIndex,
+                );
 
-            const chapterSentences = await this.getProcessedSentences(
-                chapter.id,
-                epub,
-                globalSentenceIndex,
-            );
+                logger.log(`Processing ${Object.keys(chapterSentences).length} sentences from chapter ${chapter.id}`);
 
-            logger.log(`Processing ${Object.keys(chapterSentences).length} sentences from chapter ${chapter.id}`);
+                book.sentences = { ...book.sentences, ...chapterSentences };
+                globalSentenceIndex += Object.keys(chapterSentences).length;
 
-            book.sentences = { ...book.sentences, ...chapterSentences };
-            globalSentenceIndex += Object.keys(chapterSentences).length;
+            } else {
+
+
+                const chapterSentences = await this.getProcessedSentences(
+                    chapter.id,
+                    epub,
+                    globalSentenceIndex,
+                );
+
+                logger.log(`Processing ${Object.keys(chapterSentences).length} sentences from chapter ${chapter.id}`);
+
+                book.sentences = { ...book.sentences, ...chapterSentences };
+                globalSentenceIndex += Object.keys(chapterSentences).length;
+            }
         }
 
         return book;
     }
 
     private async getProcessedSentences(
-        chapter: string,
-        epub: EPub,
-        startIndex: number,
-    ) {
+            chapter: string,
+            epub: EPub,
+            startIndex: number,
+        ) {
         let processedSentences: ProcessedSentence = {};
 
         const tags = [
@@ -111,6 +138,81 @@ export class EpubParserService {
         }
 
         return processedSentences;
+    }
+
+    private async rejectChapter(chapter: string): Promise<boolean> {
+
+        const groq = new Groq({
+            apiKey: process.env.GROQ_API_KEY,
+        });
+
+        const response = await groq.chat.completions.create({
+            model: GROQ_MODEL,
+            messages: [
+                { role: "system", content: SYSTEM_INSTRUCTIONS },
+                { role: "user", content: `Discern this section of the book: ${chapter}` },
+            ],
+            response_format: {
+                type: "json_schema",
+                json_schema: {
+                    name: "rejectChapter",
+                    schema: {
+                        type: "object",
+                        properties: {
+                            rejectChapter: { type: "boolean" },
+                        },
+                        required: ["rejectChapter"],
+                        additionalProperties: false
+                    }
+                },
+            },
+
+        });
+
+        const result = JSON.parse(response.choices[0].message.content || "{}");
+
+        return result.rejectChapter ?? false;
+    }
+
+    private async areChapterDiscernable(chapters: string): Promise<boolean> {
+        const groq = new Groq({
+            apiKey: process.env.GROQ_API_KEY,
+        });
+        const response = await groq.chat.completions.create({
+            model: GROQ_MODEL,
+            messages: [
+                {
+                    role: "system", content: `
+                    You are given a list of chapter ids of a book extracted from an epub file,
+                    Determine if the chapters are named in a way that is easy to discern what they are about by their id
+                    For example if the chapter id is "chapter-1", the chapter is about the first chapter of the book
+                    If the chapter ids are like "intro", "intro-1", "chap-1", "chap-2", "conclusion", "gloss", "index", "copy", "ack", etc. the chapter is about the introduction of the book
+                    if the chapter ids are uniform and don't contain any specific information about the chapter, like "id1", "id2", "id3", etc. then return false
+                    
+                    If unsure, return false.
+                
+                    ` },
+                { role: "user", content: `Chapter ids: ${chapters}` },
+            ],
+            response_format: {
+                type: "json_schema",
+                json_schema: {
+                    name: "areChapterDiscernable",
+                    schema: {
+                        type: "object",
+                        properties: {
+                            areChapterDiscernable: { type: "boolean" },
+                        },
+                        required: ["areChapterDiscernable"],
+                        additionalProperties: false
+                    }
+                },
+            },
+        });
+
+        const result = JSON.parse(response.choices[0].message.content || "{}");
+
+        return result.areChapterDiscernable ?? false;
     }
 
     private typeOfText(text: string) {

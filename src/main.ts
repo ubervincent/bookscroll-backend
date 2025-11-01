@@ -4,6 +4,12 @@ import "reflect-metadata"
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use((req, res, next) => {
+    res.removeHeader('Last-Modified');
+    next();
+  });
+
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
