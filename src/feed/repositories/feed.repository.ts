@@ -1,10 +1,10 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { DataSource, ILike } from 'typeorm';
+import { DataSource, ILike, MoreThan } from 'typeorm';
 import { Snippet } from 'src/book/entities/snippet.entity';
 
 @Injectable()
 export class FeedRepository {
-  constructor(@Inject('DATA_SOURCE') private readonly dataSource: DataSource) {}
+  constructor(@Inject('DATA_SOURCE') private readonly dataSource: DataSource) { }
 
   async getFeed(): Promise<Snippet[]> {
     return this.dataSource.getRepository(Snippet).find({
@@ -19,51 +19,71 @@ export class FeedRepository {
     });
   }
 
-  async getTotalSnippets(): Promise<number> {
-    return this.dataSource.getRepository(Snippet).count();
-  }
-
-  async getTotalSnippetsByBookId(bookId: number): Promise<number> {
-    return this.dataSource.getRepository(Snippet).count({ where: { book: { id: bookId } } });
-  }
-
-  async getTotalSnippetsByTheme(theme: string): Promise<number> {
-    return this.dataSource.getRepository(Snippet).count({ where: { themes: { name: ILike(`%${theme}%`) } } });
-  }
-
-  async getNSnippets(limit?: number): Promise<Snippet[]> {
-    return this.dataSource.getRepository(Snippet)
+  async getLastSnippetId(): Promise<number> {
+    const snippet = await this.dataSource
+      .getRepository(Snippet)
       .createQueryBuilder('snippet')
-      .leftJoinAndSelect('snippet.book', 'book')
-      .leftJoinAndSelect('snippet.themes', 'themes')
-      .orderBy('RANDOM()') // PostgreSQL
-      .limit(limit || 10)
-      .getMany();
+      .orderBy('snippet.id', 'DESC')
+      .limit(1)
+      .getOne();
+    
+    return snippet?.id ?? 0;
   }
 
-  async getFeedByBookIdAndLimit(bookId: number, limit?: number): Promise<Snippet[]> {
+  async getLastSnippetIdByBookId(bookId: number): Promise<number> {
+    const lastSnippet = await this.dataSource.getRepository(Snippet).findOne({ select: { id: true }, where: { book: { id: bookId } }, order: { id: 'DESC' } });
+    return lastSnippet?.id || 0;
+  }
+
+  async getLastSnippetIdByTheme(theme: string): Promise<number> {
+    const lastSnippet = await this.dataSource.getRepository(Snippet).findOne({ select: { id: true }, where: { themes: { name: ILike(`%${theme}%`) } }, order: { id: 'DESC' } });
+    return lastSnippet?.id || 0;
+  }
+
+  async getNSnippets(limit: number, cursor: number): Promise<Snippet[]> {
     return this.dataSource.getRepository(Snippet).find({
-      where: { book: { id: bookId } },
+      take: limit || 10,
+      relations: ['book', 'themes'],
+      select: {
+        book: {
+          id: true,
+          title: true,
+          author: true,
+        },
+      },
+      where: {
+        id: MoreThan(cursor),
+      },
+    });
+  }
+
+  async getFeedByBookIdAndLimit(bookId: number, limit: number, cursor: number): Promise<Snippet[]> {
+    return await this.dataSource.getRepository(Snippet).find({
       take: limit,
       select: {
         book: {
           id: true,
-          title: true, 
+          title: true,
           author: true,
         },
       },
+      where: { book: { id: bookId }, id: MoreThan(cursor) },
       relations: ['book', 'themes'],
     });
   }
 
-  async getFeedByTheme(theme: string, limit?: number): Promise<Snippet[]> {
-    return this.dataSource.getRepository(Snippet)
-    .createQueryBuilder('snippet')
-    .leftJoinAndSelect('snippet.book', 'book')
-    .leftJoinAndSelect('snippet.themes', 'themes')
-    .where('themes.name ILIKE :theme', { theme: `%${theme}%` })
-    .orderBy('RANDOM()')
-    .limit(limit || 10)
-    .getMany();
+  async getFeedByTheme(theme: string, limit: number, cursor: number): Promise<Snippet[]> {
+    return await this.dataSource.getRepository(Snippet).find({
+      take: limit,
+      select: {
+        book: {
+          id: true,
+          title: true,
+          author: true,
+        },
+      },
+      where: { themes: { name: ILike(`%${theme}%`) }, id: MoreThan(cursor) },
+      relations: ['book', 'themes'],
+    });
   }
 }

@@ -29,6 +29,9 @@ export class Snippet {
     @Column()
     sentenceText: string;
 
+    @Column({ nullable: true })
+    originalTextWithIndices: string;
+    
     @Column({ type: 'vector', nullable: true})
     embedding: number[];
 }

@@ -12,6 +12,7 @@ export interface Snippet {
   reason: string;
   themes: string[];
   sentenceText: string;
+  originalTextWithIndices: string;
 }
 
 const SnippetsSchema =
@@ -23,6 +24,7 @@ const SnippetsSchema =
         snippetText: z.string(),
         reason: z.string(),
         themes: z.array(z.string()),
+        originalTextWithIndices: z.string(),
       })
     ),
   });
@@ -33,6 +35,7 @@ export interface SnippetResponse {
   snippetText: string;
   reason: string;
   themes: string[];
+  originalTextWithIndices: string;
 }
 
 const SNIPPET_MAX_LENGTH = 25;
@@ -41,22 +44,24 @@ const SNIPPET_MIN_LENGTH = 6;
 
 const MAX_CONCURRENT_REQUESTS = 15;
 
-const JOIN_SENTENCES_THRESHOLD = 20;
+const JOIN_SENTENCES_THRESHOLD = 30;
 
 const SYSTEM_INSTRUCTIONS = `
 You are a social-media content editor.  
-Your task: Extract and paraphrase **one** highly-shareable, coherent, inspirational snippet from the passage below that works on its own (without additional context), and that is ready for scrolling, quoting, reposting.
+Your task: Extract highly-shareable, coherent, inspirational snippets from the passage below that works on its own (without additional context), and that is ready for scrolling, quoting, reposting.
 
 Requirements:
-- The snippet must be between ${SNIPPET_MIN_LENGTH} and ${SNIPPET_MAX_LENGTH} words.  
+- The snippets must be between ${SNIPPET_MIN_LENGTH} and ${SNIPPET_MAX_LENGTH} words.  
 - It must stand alone: a reader should understand and share it without needing the original text.  
 - Do not include text that is purely chapter headings, citations, legal boilerplate, or out-of-context fragments.  
-- If the passage offers no suitable snippet, respond with an empty array.
+- If the passage offers no suitable snippets, respond with an empty array.
 
-For the snippet:
+For the snippets:
 - “themes” is an array of broad, general, lowercase theme-words (e.g., ["self-belief","creative-flow"]).  
 - “start_sentence” and “end_sentence” refer to the index numbers of the sentence(s) in the source paragraph you used.  
-- If you choose more than one sentence, the snippet should feel unified and coherent.
+- If you choose more than one sentence, the snippets should feel unified and coherent.
+
+Return the original text with indices of the sentences you used to extract the snippets.
 
 Tone: warm, encouraging, readable in a single glance.  
 Focus: key idea or concept in the book passage that evokes insight or action.
@@ -99,7 +104,7 @@ export class SnippetExtractionService {
           }))];
 
           completeCount++ ;
-          progressPercentageMap.set(bookId, Math.round(completeCount / paragraphs.length * 50));
+          progressPercentageMap.set(bookId, Math.round(completeCount / paragraphs.length * 95));
 
           logger.log(`Progress percentage: ${progressPercentageMap.get(bookId)}`);
           logger.log(`OpenAI responded for paragraph ${index}/${paragraphs.length}`);
@@ -129,6 +134,7 @@ export class SnippetExtractionService {
 
     const response = await client.responses.parse({
       model: "gpt-5-nano-2025-08-07",
+      reasoning: { effort: "low" },
       input: [
         {
           role: "system",

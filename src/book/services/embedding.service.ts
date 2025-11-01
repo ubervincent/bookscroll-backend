@@ -22,7 +22,7 @@ export class EmbeddingService {
             snippetEntity.embedding = embedding;
 
             completeCount++ ;
-            progressPercentageMap.set(bookId, 50 + Math.round(completeCount / snippets.length * 50));
+            progressPercentageMap.set(bookId, 95 + Math.round(completeCount / snippets.length * 5));
 
             logger.log(`Progress percentage: ${progressPercentageMap.get(bookId)}`);
             logger.log(`OpenAI responded for embedding`);

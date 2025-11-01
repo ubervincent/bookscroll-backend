@@ -68,35 +68,42 @@
     ```
   Note: `totalSentences` is the total number of sentences in the book.
 
-- **GET /feed?limit=NUMBER**
-  - **Description**: Get randomized feed of snippet cards.
-  - **Query**: `limit` (optional number)
-  - **Response (array of)**:
+- **GET /feed?limit=NUMBER&cursor=NUMBER**
+  - **Description**: Get feed of snippet cards with cursor-based pagination.
+  - **Query**: `limit` (optional number, defaults to 10), `cursor` (optional number, defaults to 0 to start from beginning)
+  - **Response**:
     ```json
     {
-      "bookId": 1,
-      "bookTitle": "...",
-      "bookAuthor": "...",
-      "snippetId": 10,
-      "snippetText": "...",
-      "totalSnippets": 100,
-      "reason": "...",
-      "sentenceText": "...",
-      "textToSearch": "first 8 words...",
-      "themes": ["theme1", "theme2"],
-      "startSentence": 12,
-      "endSentence": 18
+      "items": [
+        {
+          "bookId": 1,
+          "bookTitle": "...",
+          "bookAuthor": "...",
+          "snippetId": 10,
+          "snippetText": "...",
+          "reason": "...",
+          "sentenceText": "...",
+          "originalTextWithIndices": "...",
+          "textToSearch": "first 8 words...",
+          "themes": ["theme1", "theme2"],
+          "startSentence": 12,
+          "endSentence": 18
+        }
+      ],
+      "nextCursor": 10,
+      "hasMore": true
     }
     ```
+  Note: Use `nextCursor` from the response to fetch the next page. Set `hasMore` to `false` when there are no more items.
 
-- **GET /feed/book/:bookId?limit=NUMBER**
-  - **Description**: Get feed filtered by book.
+- **GET /feed/book/:bookId?limit=NUMBER&cursor=NUMBER**
+  - **Description**: Get feed filtered by book with cursor-based pagination.
   - **Params**: `bookId` (number)
-  - **Query**: `limit` (optional number)
+  - **Query**: `limit` (optional number, defaults to 10), `cursor` (optional number, defaults to 0)
   - **Response**: Same shape as `GET /feed`.
 
-- **GET /feed/theme/:theme?limit=NUMBER**
-  - **Description**: Get feed filtered by theme.
+- **GET /feed/theme/:theme?limit=NUMBER&cursor=NUMBER**
+  - **Description**: Get feed filtered by theme with cursor-based pagination.
   - **Params**: `theme` (string)
-  - **Query**: `limit` (optional number)
+  - **Query**: `limit` (optional number, defaults to 10), `cursor` (optional number, defaults to 0)
   - **Response**: Same shape as `GET /feed`.
