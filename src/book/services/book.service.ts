@@ -49,6 +49,7 @@ export class BookService {
 
     return {
       message: `Book ${bookEntity.id} - ${bookEntity.title} processing started`,
+      bookId: bookEntity.id,
     }
   }
   
