@@ -68,9 +68,9 @@
     ```
   Note: `totalSentences` is the total number of sentences in the book.
 
-- **GET /feed?limit=NUMBER&cursor=NUMBER**
-  - **Description**: Get feed of snippet cards with cursor-based pagination.
-  - **Query**: `limit` (optional number, defaults to 10), `cursor` (optional number, defaults to 0 to start from beginning)
+- **GET /feed?limit=NUMBER**
+  - **Description**: Get feed of snippet cards with random sampling.
+  - **Query**: `limit` (optional number, defaults to 10)
   - **Response**:
     ```json
     {
@@ -89,21 +89,21 @@
           "startSentence": 12,
           "endSentence": 18
         }
-      ],
-      "nextCursor": 10,
-      "hasMore": true
+      ]
     }
     ```
-  Note: Use `nextCursor` from the response to fetch the next page. Set `hasMore` to `false` when there are no more items.
+  Note: Returns a random sample of snippets. Each request returns a different random set.
 
-- **GET /feed/book/:bookId?limit=NUMBER&cursor=NUMBER**
-  - **Description**: Get feed filtered by book with cursor-based pagination.
+- **GET /feed/book/:bookId?limit=NUMBER**
+  - **Description**: Get feed filtered by book with random sampling.
   - **Params**: `bookId` (number)
-  - **Query**: `limit` (optional number, defaults to 10), `cursor` (optional number, defaults to 0)
+  - **Query**: `limit` (optional number, defaults to 10)
   - **Response**: Same shape as `GET /feed`.
+  Note: Returns a random sample of snippets from the specified book.
 
-- **GET /feed/theme/:theme?limit=NUMBER&cursor=NUMBER**
-  - **Description**: Get feed filtered by theme with cursor-based pagination.
+- **GET /feed/theme/:theme?limit=NUMBER**
+  - **Description**: Get feed filtered by theme with random sampling.
   - **Params**: `theme` (string)
-  - **Query**: `limit` (optional number, defaults to 10), `cursor` (optional number, defaults to 0)
+  - **Query**: `limit` (optional number, defaults to 10)
   - **Response**: Same shape as `GET /feed`.
+  Note: Returns a random sample of snippets matching the specified theme.
