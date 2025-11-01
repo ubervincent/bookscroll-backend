@@ -1,7 +1,5 @@
 export class FeedResponseDto {
   items: FeedItem[];
-  nextCursor?: number;
-  hasMore?: boolean;
 }
 
 export class FeedItem {

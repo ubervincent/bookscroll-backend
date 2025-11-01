@@ -1,4 +1,4 @@
-import { ConsoleLogger, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { FeedRepository } from './repositories/feed.repository';
 import { Snippet } from 'src/book/entities/snippet.entity';
 import { FeedItem, FeedResponseDto } from './dto/feed.dto';
@@ -7,55 +7,32 @@ import { FeedItem, FeedResponseDto } from './dto/feed.dto';
 export class FeedService {
   constructor(private readonly feedRepository: FeedRepository) {}
 
-  private buildFeedResponse(
-    feeds: FeedItem[],
-    lastSnippetId: number,
-    cursor: number
-  ): FeedResponseDto {
-    if (feeds.length === 0) {
-      return {
-        items: [],
-        nextCursor: undefined,
-        hasMore: false,
-      };
-    }
-    const nextCursor = feeds.length > 0 ? feeds[feeds.length - 1].snippetId : undefined;
-    const hasMore = nextCursor !== undefined && lastSnippetId > nextCursor;
+  async getFeed(limit: number): Promise<FeedResponseDto> {
+    const snippets = await this.feedRepository.getRandomSnippets(limit);
+    const feeds = snippets.map((snippet) => this.toFeedItem(snippet));
 
     return {
       items: feeds,
-      nextCursor,
-      hasMore,
     };
   }
 
-  async getFeed(limit: number, cursor: number): Promise<FeedResponseDto> {
-    const [snippets, lastSnippetId] = await Promise.all([
-      this.feedRepository.getNSnippets(limit, cursor),
-      this.feedRepository.getLastSnippetId(),
-    ]);
+  async getFeedByBookId(bookId: number, limit: number): Promise<FeedResponseDto> {
+    const snippets = await this.feedRepository.getRandomSnippetsByBookId(bookId, limit);
     const feeds = snippets.map((snippet) => this.toFeedItem(snippet));
-    return this.buildFeedResponse(feeds, lastSnippetId, cursor);
+
+    return {
+      items: feeds,
+    };
   }
 
-  async getFeedByBookIdAndLimit(bookId: number, limit: number, cursor: number): Promise<FeedResponseDto> {
-    const [snippets, lastSnippetId] = await Promise.all([
-      this.feedRepository.getFeedByBookIdAndLimit(bookId, limit, cursor),
-      this.feedRepository.getLastSnippetIdByBookId(bookId),
-    ]);
+  async getFeedByTheme(theme: string, limit: number): Promise<FeedResponseDto> {
+    const snippets = await this.feedRepository.getRandomSnippetsByTheme(theme, limit);
     const feeds = snippets.map((snippet) => this.toFeedItem(snippet));
-    return this.buildFeedResponse(feeds, lastSnippetId, cursor);
-  }
 
-  async getFeedByTheme(theme: string, limit: number, cursor: number): Promise<FeedResponseDto> {
-    const [snippets, lastSnippetId] = await Promise.all([
-      this.feedRepository.getFeedByTheme(theme, limit, cursor),
-      this.feedRepository.getLastSnippetIdByTheme(theme),
-    ]);
-    const feeds = snippets.map((snippet) => this.toFeedItem(snippet));
-    return this.buildFeedResponse(feeds, lastSnippetId, cursor);
+    return {
+      items: feeds,
+    };
   }
-
 
   private toFeedItem(snippet: Snippet): FeedItem {
     const response: FeedItem = {
