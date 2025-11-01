@@ -79,6 +79,7 @@ export class BookService {
   async getBookProcessingStatus(bookId: number) {
     const status = await this.bookRepository.getBookStatus(bookId);
     return {
+      id: bookId,
       status: status,
       progressPercentage: this.progressPercentageMap.get(bookId) ?? 100,
     };

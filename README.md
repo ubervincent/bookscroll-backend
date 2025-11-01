@@ -35,6 +35,19 @@
     { "message": "Book with id <id> deleted successfully" }
     ```
 
+- **GET /book/:bookId/status**
+  - **Description**: Get processing status and progress percentage for a book.
+  - **Params**: `bookId` (number)
+  - **Response**:
+    ```json
+    {
+      "id": 1,
+      "status": "processing",
+      "progressPercentage": 45
+    }
+    ```
+  Note: `status` can be `"processing"`, `"completed"`, or `"failed"`. `progressPercentage` ranges from 0-100.
+
 - **GET /book/:bookId/sentences?start=NUMBER&end=NUMBER**
   - **Description**: Return concatenated sentences from `start` to `end` (inclusive), plus minimal context.
   - **Params**: `bookId` (number)
