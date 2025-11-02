@@ -18,6 +18,9 @@ export class Book {
     @Column({ nullable: true })
     status?: 'processing' | 'completed' | 'failed';
 
+    @Column({ nullable: true })
+    userId?: string;
+
     @OneToMany(() => Snippet, (snippet) => snippet.book, { cascade: true })
     @JoinTable()
     snippets: Snippet[];

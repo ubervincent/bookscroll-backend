@@ -31,13 +31,13 @@ export class BookService {
 
   private progressPercentageMap = new Map<number, number>();
   
-  async upload(file: Express.Multer.File) {
+  async upload(file: Express.Multer.File, userId: string) {
     const filePath = this.fileStorageService.saveBook(file);
     let book = await this.epubParserService.parseEpub(await filePath);
 
     await this.fileStorageService.deleteBook(await filePath);
 
-    const bookEntity: BookEntity = await this.bookRepository.saveBook(this.toBookEntity(book));
+    const bookEntity: BookEntity = await this.bookRepository.saveBook(this.toBookEntity(book, userId));
 
     if (!bookEntity.id) {
       throw new Error('Book ID is required');
@@ -86,8 +86,8 @@ export class BookService {
     };
   }
 
-  async getAllBooks(): Promise<BookResponseDto[]> {
-    const books = await this.bookRepository.getAllBooks();
+  async getAllBooks(userId: string): Promise<BookResponseDto[]> {
+    const books = await this.bookRepository.getAllBooks(userId);
     return books;
   }
 
@@ -118,8 +118,8 @@ export class BookService {
     return response;
   }
 
-  async deleteById(id: number) {
-    const result = await this.bookRepository.deleteBook(id);
+  async deleteById(id: number, userId: string) {
+    const result = await this.bookRepository.deleteBook(id, userId);
     return result;
   }
 
@@ -135,11 +135,12 @@ export class BookService {
     return snippetEntity;
   }
 
-  private toBookEntity(book: Book): BookEntity {
+  private toBookEntity(book: Book, userId: string): BookEntity {
     const bookEntity = new BookEntity();
     bookEntity.title = book.title;
     bookEntity.author = book.author;
     bookEntity.sentences = book.sentences;
+    bookEntity.userId = userId;
     return bookEntity;
   }
 

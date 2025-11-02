@@ -4,12 +4,13 @@ import { AppService } from './app.service';
 import { BookModule } from './book/book.module';
 import { FeedModule } from './feed/feed.module';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [BookModule, FeedModule, ConfigModule.forRoot({
     isGlobal: true,
     envFilePath: '.env',
-  })],
+  }), AuthModule],
   controllers: [AppController],
   providers: [AppService],
 })

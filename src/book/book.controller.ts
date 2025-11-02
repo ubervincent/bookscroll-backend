@@ -1,17 +1,20 @@
-import { Controller, UseInterceptors, UploadedFile, Post, Get, Param, Delete, Query, BadRequestException, ParseIntPipe } from '@nestjs/common';
+import { Controller, UseInterceptors, UploadedFile, Post, Get, Param, Delete, Query, BadRequestException, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { BookService } from './services/book.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileSizeValidationPipe } from './pipes/file-size-validation.pipe';
 import { FileTypeValidationPipe } from './pipes/file-type-validation.pipe';
 import { BookResponseDto, SentencesResponseDto } from './dto/book.dto';
+import { AuthGuard } from '../auth/auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
 
 @Controller('book')
+@UseGuards(AuthGuard)
 export class BookController {
   constructor(private readonly bookService: BookService) {}
 
   @Get()
-  async getAllBooks() : Promise<BookResponseDto[]> {
-    return await this.bookService.getAllBooks();
+  async getAllBooks(@CurrentUser() user): Promise<BookResponseDto[]> {
+    return await this.bookService.getAllBooks(user.id);
   }
 
   @Post('upload')
@@ -19,16 +22,18 @@ export class BookController {
   async upload(
     @UploadedFile(new FileTypeValidationPipe(), new FileSizeValidationPipe()) 
     file: Express.Multer.File,
+    @CurrentUser() user,
   ): Promise<{ message: string}> {
-    const result = await this.bookService.upload(file);
+    const result = await this.bookService.upload(file, user.id);
     return result;
   } 
 
   @Delete(':id')
   async delete(
-    @Param('id') id: number
+    @Param('id') id: number,
+    @CurrentUser() user,
   ) {
-    return await this.bookService.deleteById(id);
+    return await this.bookService.deleteById(id, user.id);
   }
 
   @Get(':bookId/sentences')

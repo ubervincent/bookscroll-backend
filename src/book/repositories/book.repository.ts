@@ -44,8 +44,8 @@ export class BookRepository {
     return book.status;
   }
 
-  async deleteBook(id: number) : Promise<{ message: string }> {
-    await this.dataSource.getRepository(Book).delete(id);
+  async deleteBook(id: number, userId: string): Promise<{ message: string }> {
+    await this.dataSource.getRepository(Book).delete({ id, userId });
     return { message: `Book with id ${id} deleted successfully` };
   }
 
@@ -57,8 +57,9 @@ export class BookRepository {
     return this.dataSource.getRepository(Snippet).find({ where: { themes: { name: theme } }, relations: ['book', 'themes'] });
   }
 
-  async getAllBooks(): Promise<Book[]> {
+  async getAllBooks(userId: string): Promise<Book[]> {
     return this.dataSource.getRepository(Book).find({
+      where: { userId },
       select: ['id', 'title', 'author'],
     });
   }

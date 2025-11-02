@@ -153,8 +153,6 @@ export class SnippetExtractionService {
       }
     });
 
-    logger.log(`OpenAI responded ${JSON.stringify(response.output_parsed)}`);
-
     return response.output_parsed as { snippets: SnippetResponse[] };
   }
 }

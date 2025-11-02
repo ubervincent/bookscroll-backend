@@ -7,6 +7,7 @@ import { FileStorageService } from './services/file-storage.service';
 import { DatabaseModule } from 'src/database/database.module';
 import { BookRepository } from './repositories/book.repository';
 import { EmbeddingService } from './services/embedding.service';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   controllers: [BookController],
@@ -18,6 +19,6 @@ import { EmbeddingService } from './services/embedding.service';
     EmbeddingService,
     BookRepository,
   ],
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, AuthModule],
 })
 export class BookModule { }
