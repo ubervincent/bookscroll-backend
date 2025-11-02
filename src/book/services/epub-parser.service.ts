@@ -7,7 +7,7 @@ import { Groq } from 'groq-sdk';
 
 const logger = new Logger('EpubParserService');
 
-const SENTENCE_LENGTH_THRESHOLD = 5;
+const SENTENCE_LENGTH_THRESHOLD = 30;
 
 export interface ProcessedSentence {
     [index: number]: string;
@@ -60,16 +60,16 @@ export class EpubParserService {
         logger.log(`Chapters are ${chaptersAreDiscernable ? 'discernable' : 'not discernable'}`);
 
         for (const chapter of epub.flow) {
-            
+
             if (chaptersAreDiscernable) {
                 if (await this.rejectChapter(chapter.id)) {
 
                     logger.log(`Chapter ${chapter.id} with title ${chapter.title} rejected`);
                     continue;
                 }
-                
+
                 logger.log(`Chapter ${chapter.id} with title ${chapter.title} accepted`);
-                
+
                 const chapterSentences = await this.getProcessedSentences(
                     chapter.id,
                     epub,
@@ -101,10 +101,10 @@ export class EpubParserService {
     }
 
     private async getProcessedSentences(
-            chapter: string,
-            epub: EPub,
-            startIndex: number,
-        ) {
+        chapter: string,
+        epub: EPub,
+        startIndex: number,
+    ) {
         let processedSentences: ProcessedSentence = {};
 
         const tags = [
@@ -130,12 +130,28 @@ export class EpubParserService {
             .map((el) => $(el).text());
 
         let currentIndex = startIndex;
+        let aggregatedSentence = "";
+
         for (const sentence of sentences) {
             const normalisedSentence = this.normaliseSentence(sentence);
-            if (normalisedSentence.split(' ').length > SENTENCE_LENGTH_THRESHOLD) {
-                currentIndex++;
-                processedSentences[currentIndex] = normalisedSentence;
+
+            if (normalisedSentence.trim().length === 0) {
+                continue;
             }
+
+            aggregatedSentence += (aggregatedSentence ? " " : "") + normalisedSentence;
+
+            if (aggregatedSentence.split(' ').length > SENTENCE_LENGTH_THRESHOLD) {
+                currentIndex++;
+                processedSentences[currentIndex] = aggregatedSentence;
+                aggregatedSentence = "";
+            }
+        }
+
+        // Don't forget to save any remaining aggregated sentence
+        if (aggregatedSentence.trim().length > 0) {
+            currentIndex++;
+            processedSentences[currentIndex] = aggregatedSentence;
         }
 
         return processedSentences;
