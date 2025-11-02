@@ -16,9 +16,6 @@ export interface Book {
   snippets: Snippet[];
 }
 
-const logger = new Logger('BookService');
-
-
 @Injectable()
 export class BookService {
   constructor(
