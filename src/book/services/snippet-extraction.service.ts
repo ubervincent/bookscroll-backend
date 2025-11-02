@@ -101,12 +101,15 @@ export class SnippetExtractionService {
 
           const result = await this.callOpenAI(paragraph);
 
-          snippets = [...snippets, ...result.snippets.map(snippet => ({
-            ...snippet,
-            startSentence: Math.min(...this.parseOriginalTextIndices(snippet.originalTextWithIndices)),
-            endSentence: Math.max(...this.parseOriginalTextIndices(snippet.originalTextWithIndices)),
-            sentenceText: this.parseSentenceTextFromIndices(snippet.originalTextWithIndices).join(' '),
-          }))];
+            snippets = [...snippets, ...result.snippets.map(snippet => {
+            const indices = this.parseOriginalTextIndices(snippet.originalTextWithIndices);
+            return {
+              ...snippet,
+              startSentence: Math.min(...indices),
+              endSentence: Math.max(...indices),
+              sentenceText: this.parseSentenceTextFromIndices(snippet.originalTextWithIndices).join(' '),
+            };
+          })];
 
           completeCount++;
           progressPercentageMap.set(bookId, Math.round(completeCount / paragraphs.length * 95));
@@ -124,6 +127,10 @@ export class SnippetExtractionService {
       return [1];
     }
     const matches = [...sentence.matchAll(/<(\d+)>/g)]
+    if (matches.length === 0) {
+      logger.error(`No indices found for sentence: ${sentence}`);
+      return [1];
+    }
     return matches.map(m => parseInt(m[1], 10));
   }
 
@@ -132,6 +139,10 @@ export class SnippetExtractionService {
       return [""];
     }
     const matches = [...sentence.matchAll(/<\d+>(.*?)<\/\d+>/g)];
+    if (matches.length === 0) {
+      logger.error(`No sentences found for sentence: ${sentence}`);
+      return [""];
+    }
     return matches.map(m => m[1].trim());
   }
 
