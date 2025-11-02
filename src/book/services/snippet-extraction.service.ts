@@ -19,8 +19,6 @@ const SnippetsSchema =
   z.object({
     snippets: z.array(
       z.object({
-        startSentence: z.number(),
-        endSentence: z.number(),
         snippetText: z.string(),
         reason: z.string(),
         themes: z.array(z.string()),
@@ -63,7 +61,9 @@ For the snippets:
 
 Return the originalTextWithIndices with indices tags along with the sentences you used to extract the snippets.
 Example of the originalTextWithIndices:
-<1>This is the first sentence.</1> <2>This is the second sentence.</2> <3>This is the third sentence.</3>...<n>This is the nth sentence.</n>
+<1>This is the first sentence.</1> <2>This is the second sentence.</2>...<n>This is the nth sentence.</n>
+
+DO NOT PRODUCE THE SNIPPET TEXT IF YOU CANNOT PRODUCE THE INDEXED SENTENCES
 
 Tone: warm, encouraging, readable in a single glance.  
 Focus: key idea or concept in the book passage that evokes insight or action.
@@ -78,7 +78,7 @@ export class SnippetExtractionService {
   async getSnippetFromBook(book: Book, progressPercentageMap: Map<number, number>, bookId: number) {
 
     const sentences = Object.entries(book.sentences);
-    const taggedSentences = sentences.map(([index, sentence]) => `<${index}>${sentence}</${index}>`);
+    const taggedSentences = Object.keys(book.sentences).map(key => `<${key}>${book.sentences[key]}</${key}>`);
 
     const paragraphs: string[] = [];
     for (let i = 0; i < taggedSentences.length; i += JOIN_SENTENCES_THRESHOLD) {
@@ -98,14 +98,16 @@ export class SnippetExtractionService {
         limit(async () => {
           logger.log(`Calling OpenAI for paragraph ${index}/${paragraphs.length}`);
 
-          const result = await this.callOpenAI(paragraph, index);
+          const result = await this.callOpenAI(paragraph);
 
           snippets = [...snippets, ...result.snippets.map(snippet => ({
             ...snippet,
-            sentenceText: this.getSentenceTextFromIndices(book, snippet.startSentence, snippet.endSentence),
+            startSentence: Math.min(...this.parseOriginalTextIndices(snippet.originalTextWithIndices)),
+            endSentence: Math.max(...this.parseOriginalTextIndices(snippet.originalTextWithIndices)),
+            sentenceText: this.parseSentenceTextFromIndices(snippet.originalTextWithIndices).join(' '),
           }))];
 
-          completeCount++ ;
+          completeCount++;
           progressPercentageMap.set(bookId, Math.round(completeCount / paragraphs.length * 95));
 
           logger.log(`Progress percentage: ${progressPercentageMap.get(bookId)}`);
@@ -116,20 +118,23 @@ export class SnippetExtractionService {
     return snippets;
   }
 
-  private getSentenceTextFromIndices(book: Book, startIndex: number, endIndex: number) {
-    const from = Math.min(startIndex, endIndex);
-    const to = Math.max(startIndex, endIndex);
-    const parts: string[] = [];
-    for (let i = from; i <= to; i++) {
-      const s = book.sentences[i];
-      if (s) {
-        parts.push(s);
-      }
+  private parseOriginalTextIndices(sentence: string): number[] {
+    if (sentence.length === 0) {
+      return [1];
     }
-    return parts.join(' ').trim();
+    const matches = [...sentence.matchAll(/<(\d+)>/g)]
+    return matches.map(m => parseInt(m[1], 10));
   }
 
-  private async callOpenAI(paragraph: string, paragraphIndex: number) {
+  private parseSentenceTextFromIndices(sentence: string): string[] {
+    if (sentence.length === 0) {
+      return [""];
+    }
+    const matches = [...sentence.matchAll(/<\d+>(.*?)<\/\d+>/g)];
+    return matches.map(m => m[1].trim());
+  }
+
+  private async callOpenAI(paragraph: string) {
     const client = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,
     });
