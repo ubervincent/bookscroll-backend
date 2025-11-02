@@ -69,9 +69,9 @@ export class BookService {
       bookEntity.id!
     );
 
-    await this.bookRepository.updateBookStatus(bookEntity.id!, 'completed');
-
+    
     await this.bookRepository.saveSnippetsByBook(bookEntity, snippetsEntitiesWithEmbeddings);
+    await this.bookRepository.updateBookStatus(bookEntity.id!, 'completed');
   }
 
   async getBookProcessingStatus(bookId: number) {
