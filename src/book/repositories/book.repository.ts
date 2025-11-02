@@ -76,7 +76,17 @@ export class BookRepository {
       `,
       [bookId]
     );
-    return parseInt(rows[0].count, 10) || 0;
+    
+    if (!rows || rows.length === 0 || !rows[0]) {
+      return 0;
+    }
+
+    const countValue = rows[0].count;
+    if (countValue === null || countValue === undefined) {
+      return 0;
+    }
+
+    return parseInt(countValue, 10) || 0;
   }
 
   async getSentenceWindowByIndices(
