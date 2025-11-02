@@ -45,7 +45,7 @@ export class BookService {
 
     await this.bookRepository.updateBookStatus(bookEntity.id, 'processing');
 
-    this.extractSnippets(book, bookEntity);
+    this.extractSnippets(book, bookEntity, userId);
 
     return {
       message: `Book ${bookEntity.id} - ${bookEntity.title} processing started`,
@@ -53,18 +53,18 @@ export class BookService {
     }
   }
   
-  private async extractSnippets(book: Book, bookEntity: BookEntity ) {
+  private async extractSnippets(book: Book, bookEntity: BookEntity, userId: string) {
     const snippets = await this.snippetExtractionService.getSnippetFromBook(
       book, 
       this.progressPercentageMap,
       bookEntity.id!
     );
 
-    const themes = this.getAllUniqueThemes(snippets);
-    const themesEntities = themes.map(theme => this.toThemeEntity(theme));
+    const themes = this.getAllUniqueThemes(snippets, userId);
+    const themesEntities = themes.map(theme => this.toThemeEntity(theme, userId));
     const savedThemesEntities = await this.bookRepository.upsertThemesByName(themesEntities);
 
-    const snippetsEntities = snippets.map(snippet => this.toSnippetEntity(snippet, savedThemesEntities));
+    const snippetsEntities = snippets.map(snippet => this.toSnippetEntity(snippet, savedThemesEntities, userId));
 
     const snippetsEntitiesWithEmbeddings = await this.embeddingService.getEmbeddingsFromSnippets(
       snippetsEntities, 
@@ -123,7 +123,7 @@ export class BookService {
     return result;
   }
 
-  private toSnippetEntity(snippet: Snippet, savedThemesEntities: ThemeEntity[]): SnippetEntity {
+  private toSnippetEntity(snippet: Snippet, savedThemesEntities: ThemeEntity[], userId: string): SnippetEntity {
     const snippetEntity = new SnippetEntity();
     snippetEntity.startSentence = snippet.startSentence;
     snippetEntity.endSentence = snippet.endSentence;
@@ -132,6 +132,7 @@ export class BookService {
     snippetEntity.sentenceText = snippet.sentenceText;
     snippetEntity.originalTextWithIndices = snippet.originalTextWithIndices;
     snippetEntity.themes = snippet.themes.map(theme => savedThemesEntities.find(t => t.name === theme) as ThemeEntity);
+    snippetEntity.userId = userId;
     return snippetEntity;
   }
 
@@ -144,13 +145,14 @@ export class BookService {
     return bookEntity;
   }
 
-  private getAllUniqueThemes(snippets: Snippet[]): string[] {
+  private getAllUniqueThemes(snippets: Snippet[] , userId: string): string[] {
     return Array.from(new Set(snippets.flatMap(s => s.themes)));
   }
 
-  private toThemeEntity(theme: string): ThemeEntity {
+  private toThemeEntity(theme: string, userId: string): ThemeEntity {
     const themeEntity = new ThemeEntity();
     themeEntity.name = theme;
+    themeEntity.userId = userId;
     return themeEntity;
   }
 }
