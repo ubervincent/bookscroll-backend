@@ -62,9 +62,8 @@ For the snippets:
 - If you choose more than one sentence, the snippets should feel unified and coherent.
 
 Return the originalTextWithIndices with indices tags along with the sentences you used to extract the snippets.
-Example:
-<1>This is the first sentence.</1> <2>This is the second sentence.</2> <3>This is the third sentence.</3>
-<1>This is the first sentence.</1> <2>This is the second sentence.</2> <3>This is the third sentence.</3>
+Example of the originalTextWithIndices:
+<1>This is the first sentence.</1> <2>This is the second sentence.</2> <3>This is the third sentence.</3>...<n>This is the nth sentence.</n>
 
 Tone: warm, encouraging, readable in a single glance.  
 Focus: key idea or concept in the book passage that evokes insight or action.
