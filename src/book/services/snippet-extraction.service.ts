@@ -50,7 +50,8 @@ Your task: Extract highly-shareable, coherent, inspirational snippets from the p
 
 Requirements:
 - The snippets must be between ${SNIPPET_MIN_LENGTH} and ${SNIPPET_MAX_LENGTH} words.  
-- It must stand alone: a reader should understand and share it without needing the original text.  
+- It must stand alone: a reader should understand and share it without needing the original text. 
+- Sometimes you're given gibberish sentences like index, table of contents, copyright, bibliography, etc. Ignore them and do not produce the snippet text for them.
 - Do not include text that is purely chapter headings, citations, legal boilerplate, or out-of-context fragments.  
 - If the passage offers no suitable snippets, respond with an empty array.
 

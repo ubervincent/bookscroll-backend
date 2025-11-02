@@ -1,5 +1,5 @@
 import { Injectable, Logger, Inject, NotFoundException } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { Book } from '../entities/book.entity';
 import { Snippet } from '../entities/snippet.entity';
 import { Theme } from '../entities/theme.entity';
@@ -16,12 +16,17 @@ export class BookRepository {
   }
 
   async saveSnippetsByBook(book: Book, snippets: Snippet[]) {
-    await this.dataSource.getRepository(Snippet).save(snippets.map(snippet => ({ ...snippet, book: book })));
+    const snippetsWithoutIds = snippets.map(snippet => {
+      const { id, ...rest } = snippet;
+      return { ...rest, book: book };
+    });
+    
+    await this.dataSource.getRepository(Snippet).save(snippetsWithoutIds);
   }
 
   async upsertThemesByName(themes: Theme[]) {
     await this.dataSource.getRepository(Theme).upsert(themes, { conflictPaths: ['name'] });
-    return await this.dataSource.getRepository(Theme).find();
+    return await this.dataSource.getRepository(Theme).find( { where: { name: In(themes.map(theme => theme.name)) } });
   }
 
   async getBookById(id: number): Promise<Book> {

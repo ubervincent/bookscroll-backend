@@ -19,7 +19,7 @@ export class Book {
     status?: 'processing' | 'completed' | 'failed';
 
     @Column({ nullable: true })
-    userId?: string;
+    userId: string;
 
     @OneToMany(() => Snippet, (snippet) => snippet.book, { cascade: true })
     @JoinTable()
