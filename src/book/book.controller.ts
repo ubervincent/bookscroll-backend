@@ -1,4 +1,4 @@
-import { Controller, UseInterceptors, UploadedFile, Post, Get, Param, Delete, Query, BadRequestException, ParseIntPipe, UseGuards } from '@nestjs/common';
+import { Controller, UseInterceptors, UploadedFile, Post, Get, Param, Delete, Query, BadRequestException, ParseIntPipe, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { BookService } from './services/book.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileSizeValidationPipe } from './pipes/file-size-validation.pipe';

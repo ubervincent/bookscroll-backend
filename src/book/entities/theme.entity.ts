@@ -9,6 +9,9 @@ export class Theme {
     @Column({ unique: true })
     name: string;
 
+    @Column({ nullable: true })
+    userId?: string;
+    
     @ManyToMany(() => Snippet, (snippet) => snippet.themes)
     snippets: Snippet[];
 }

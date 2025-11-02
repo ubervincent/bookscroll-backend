@@ -3,10 +3,10 @@ import { FeedService } from './feed.service';
 import { FeedController } from './feed.controller';
 import { FeedRepository } from './repositories/feed.repository';
 import { DatabaseModule } from 'src/database/database.module';
-
+import { AuthModule } from 'src/auth/auth.module';
 @Module({
   controllers: [FeedController],
   providers: [FeedService, FeedRepository],
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, AuthModule],
 })
 export class FeedModule {}

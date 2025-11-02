@@ -30,6 +30,9 @@ export class Snippet {
     sentenceText: string;
 
     @Column({ nullable: true })
+    userId?: string;
+
+    @Column({ nullable: true })
     originalTextWithIndices: string;
     
     @Column({ type: 'vector', nullable: true})

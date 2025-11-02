@@ -1,14 +1,14 @@
 import { Injectable, Logger, Inject, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { Book  } from '../entities/book.entity';
-import { Snippet  } from '../entities/snippet.entity';
+import { Book } from '../entities/book.entity';
+import { Snippet } from '../entities/snippet.entity';
 import { Theme } from '../entities/theme.entity';
 
 const logger = new Logger('BookRepository');
 
 @Injectable()
 export class BookRepository {
-  constructor(@Inject('DATA_SOURCE') private readonly dataSource: DataSource) {}
+  constructor(@Inject('DATA_SOURCE') private readonly dataSource: DataSource) { }
 
   async saveBook(book: Book): Promise<Book> {
     const bookEntity = await this.dataSource.getRepository(Book).save(book);
@@ -76,7 +76,7 @@ export class BookRepository {
       `,
       [bookId]
     );
-    
+
     if (!rows || rows.length === 0 || !rows[0]) {
       return 0;
     }
