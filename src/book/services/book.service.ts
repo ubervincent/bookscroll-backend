@@ -130,6 +130,7 @@ export class BookService {
     snippetEntity.snippetText = snippet.snippetText;
     snippetEntity.reason = snippet.reason;
     snippetEntity.sentenceText = snippet.sentenceText;
+    snippetEntity.originalTextWithIndices = snippet.originalTextWithIndices;
     snippetEntity.themes = snippet.themes.map(theme => savedThemesEntities.find(t => t.name === theme) as ThemeEntity);
     return snippetEntity;
   }

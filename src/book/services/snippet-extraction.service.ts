@@ -58,10 +58,13 @@ Requirements:
 
 For the snippets:
 - “themes” is an array of broad, general, lowercase theme-words (e.g., ["self-belief","creative-flow"]).  
-- “start_sentence” and “end_sentence” refer to the index numbers of the sentence(s) in the source paragraph you used.  
+- “start_sentence” and “end_sentence” refer to the index numbers of the sentence(s) in the source paragraph you used <index></index> tags.  
 - If you choose more than one sentence, the snippets should feel unified and coherent.
 
-Return the original text with indices of the sentences you used to extract the snippets.
+Return the originalTextWithIndices with indices tags along with the sentences you used to extract the snippets.
+Example:
+<1>This is the first sentence.</1> <2>This is the second sentence.</2> <3>This is the third sentence.</3>
+<1>This is the first sentence.</1> <2>This is the second sentence.</2> <3>This is the third sentence.</3>
 
 Tone: warm, encouraging, readable in a single glance.  
 Focus: key idea or concept in the book passage that evokes insight or action.
@@ -149,6 +152,8 @@ export class SnippetExtractionService {
         format: zodTextFormat(SnippetsSchema, "snippets"),
       }
     });
+
+    logger.log(`OpenAI responded ${JSON.stringify(response.output_parsed)}`);
 
     return response.output_parsed as { snippets: SnippetResponse[] };
   }

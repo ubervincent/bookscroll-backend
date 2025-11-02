@@ -129,11 +129,12 @@ export class EpubParserService {
             .toArray()
             .map((el) => $(el).text());
 
-
-        for (const [index, sentence] of sentences.entries()) {
+        let currentIndex = startIndex;
+        for (const sentence of sentences) {
             const normalisedSentence = this.normaliseSentence(sentence);
             if (normalisedSentence.split(' ').length > SENTENCE_LENGTH_THRESHOLD) {
-                processedSentences[startIndex + index + 1] = normalisedSentence;
+                currentIndex++;
+                processedSentences[currentIndex] = normalisedSentence;
             }
         }
 
