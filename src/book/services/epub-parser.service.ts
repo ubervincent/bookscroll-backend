@@ -148,8 +148,7 @@ export class EpubParserService {
             }
         }
 
-        // Don't forget to save any remaining aggregated sentence
-        if (aggregatedSentence.trim().length > 0) {
+        if (aggregatedSentence.trim().length > 0 && aggregatedSentence.split(' ').length > SENTENCE_LENGTH_THRESHOLD) {
             currentIndex++;
             processedSentences[currentIndex] = aggregatedSentence;
         }
