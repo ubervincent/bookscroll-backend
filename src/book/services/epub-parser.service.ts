@@ -7,7 +7,7 @@ import { Groq } from 'groq-sdk';
 
 const logger = new Logger('EpubParserService');
 
-const SENTENCE_LENGTH_THRESHOLD = 30;
+const SENTENCE_LENGTH_THRESHOLD = 60;
 
 export interface ProcessedSentence {
     [index: number]: string;
