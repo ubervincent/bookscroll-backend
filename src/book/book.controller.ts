@@ -3,9 +3,10 @@ import { BookService } from './services/book.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { FileSizeValidationPipe } from './pipes/file-size-validation.pipe';
 import { FileTypeValidationPipe } from './pipes/file-type-validation.pipe';
-import { BookResponseDto, SentencesResponseDto } from './dto/book.dto';
+import { BookResponseDto, SentencesResponseDto, SearchResponseDto } from './dto/book.dto';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
+import { LimitValidationPipe } from '../feed/pipes/limit-validation.pipe';
 
 @Controller('book')
 @UseGuards(AuthGuard)
@@ -34,6 +35,18 @@ export class BookController {
     @CurrentUser() user,
   ) {
     return await this.bookService.deleteById(id, user.id);
+  }
+
+  @Get('snippets/search')
+  async searchSnippets(
+    @Query('q') searchQuery: string,
+    @Query('limit', new LimitValidationPipe()) limit: number = 10,
+    @CurrentUser() user,
+  ): Promise<SearchResponseDto> {
+    if (!searchQuery) {
+      throw new BadRequestException('Search query is required');
+    }
+    return await this.bookService.searchSnippets(searchQuery, user.id, limit);
   }
 
   @Get(':bookId/sentences')

@@ -68,6 +68,34 @@
     ```
   Note: `totalSentences` is the total number of sentences in the book.
 
+- **GET /book/snippets/search?q=TEXT&limit=NUMBER**
+  - **Description**: Search for snippets using hybrid semantic + keyword search.
+  - **Query**: 
+    - `q` (required string) - search query text
+    - `limit` (optional number, defaults to 10) - maximum results to return
+  - **Response**:
+    ```json
+    {
+      "results": [
+        {
+          "bookId": 1,
+          "bookTitle": "...",
+          "bookAuthor": "...",
+          "snippetId": 10,
+          "snippetText": "...",
+          "reason": "...",
+          "sentenceText": "...",
+          "originalTextWithIndices": "...",
+          "textToSearch": "first 8 words...",
+          "themes": ["theme1", "theme2"],
+          "startSentence": 12,
+          "endSentence": 18
+        }
+      ]
+    }
+    ```
+  Note: Combines semantic search (70% weight via embeddings) with keyword search (30% weight via full-text) to find relevant snippets by meaning and text. Results are ranked by relevance.
+
 - **GET /feed?limit=NUMBER**
   - **Description**: Get feed of snippet cards with random sampling.
   - **Query**: `limit` (optional number, defaults to 10)

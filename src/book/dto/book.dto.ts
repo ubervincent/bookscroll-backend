@@ -1,3 +1,5 @@
+import { FeedItem } from '../../feed/dto/feed.dto';
+
 export class SentencesResponseDto {
   bookId?: number;
   bookTitle?: string;
@@ -14,4 +16,8 @@ export class BookResponseDto {
   id?: number;
   title?: string;
   author?: string;
+}
+
+export class SearchResponseDto {
+  results: FeedItem[];
 }

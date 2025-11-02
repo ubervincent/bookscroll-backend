@@ -3,6 +3,7 @@ import { DataSource, In } from 'typeorm';
 import { Book } from '../entities/book.entity';
 import { Snippet } from '../entities/snippet.entity';
 import { Theme } from '../entities/theme.entity';
+import OpenAI from 'openai';
 
 const logger = new Logger('BookRepository');
 
@@ -145,5 +146,64 @@ export class BookRepository {
       prevText: (row.prevText ?? row.prevtext ?? ''),
       nextText: (row.nextText ?? row.nexttext ?? ''),
     };
+  }
+
+  async searchSnippets(searchText: string, userId: string, limit: number = 10): Promise<Snippet[]> {
+    const embedding = await this.getEmbedding(searchText);
+
+    const rows = await this.dataSource.query(
+      `
+      WITH semantic_scores AS (
+        SELECT 
+          s.id,
+          (1 - (s.embedding <=> $1::vector)) as semantic_score
+        FROM snippet s
+        INNER JOIN book b ON s."bookId" = b.id
+        WHERE b."userId" = $2 AND s.embedding IS NOT NULL
+      ),
+      keyword_scores AS (
+        SELECT 
+          s.id,
+          ts_rank(
+            to_tsvector('english', s."snippetText"),
+            plainto_tsquery('english', $3)
+          ) as keyword_score
+        FROM snippet s
+        INNER JOIN book b ON s."bookId" = b.id
+        WHERE b."userId" = $2
+      )
+      SELECT 
+        s.id
+      FROM snippet s
+      LEFT JOIN semantic_scores sem ON s.id = sem.id
+      LEFT JOIN keyword_scores key ON s.id = key.id
+      INNER JOIN book b ON s."bookId" = b.id
+      WHERE b."userId" = $2
+        AND (sem.semantic_score IS NOT NULL OR key.keyword_score > 0)
+      ORDER BY (COALESCE(sem.semantic_score * 0.7, 0) + COALESCE(key.keyword_score * 0.3, 0)) DESC
+      LIMIT $4
+      `,
+      [JSON.stringify(embedding), userId, searchText, limit]
+    );
+
+    const snippetIds = rows.map(row => row.id);
+    
+    if (snippetIds.length === 0) {
+      return [];
+    }
+
+    return this.dataSource.getRepository(Snippet).find({
+      where: { id: In(snippetIds) },
+      relations: ['book', 'themes'],
+    });
+  }
+
+  private async getEmbedding(text: string): Promise<number[]> {
+    const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const response = await client.embeddings.create({
+      model: 'text-embedding-3-small',
+      input: text,
+    });
+    return response.data[0].embedding;
   }
 }

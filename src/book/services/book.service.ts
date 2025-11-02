@@ -6,8 +6,9 @@ import { BookRepository } from '../repositories/book.repository';
 import { Book as BookEntity } from '../entities/book.entity';
 import { Snippet as SnippetEntity } from '../entities/snippet.entity';
 import { Theme as ThemeEntity } from '../entities/theme.entity';
-import { SentencesResponseDto, BookResponseDto } from '../dto/book.dto';
+import { SentencesResponseDto, BookResponseDto, SearchResponseDto } from '../dto/book.dto';
 import { EmbeddingService } from './embedding.service';
+import { FeedItem } from '../../feed/dto/feed.dto';
 
 export interface Book {
   title: string;
@@ -151,6 +152,29 @@ export class BookService {
     themeEntity.name = theme;
     themeEntity.userId = userId;
     return themeEntity;
+  }
+
+  async searchSnippets(searchQuery: string, userId: string, limit: number): Promise<SearchResponseDto> {
+    const snippets = await this.bookRepository.searchSnippets(searchQuery, userId, limit);
+    const results = snippets.map((snippet) => this.toFeedItem(snippet));
+    return { results };
+  }
+
+  private toFeedItem(snippet: SnippetEntity): FeedItem {
+    return {
+      bookTitle: snippet.book.title as string,
+      bookAuthor: snippet.book.author as string,
+      bookId: snippet.book.id as number,
+      snippetId: snippet.id as number,
+      snippetText: snippet.snippetText,
+      reason: snippet.reason,
+      startSentence: snippet.startSentence,
+      endSentence: snippet.endSentence,
+      sentenceText: snippet.sentenceText,
+      originalTextWithIndices: snippet.originalTextWithIndices,
+      textToSearch: snippet.sentenceText.split(' ').slice(0, 8).join(' '),
+      themes: snippet.themes.map(theme => theme.name),
+    };
   }
 }
 
