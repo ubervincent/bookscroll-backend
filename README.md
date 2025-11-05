@@ -135,3 +135,12 @@
   - **Query**: `limit` (optional number, defaults to 10)
   - **Response**: Same shape as `GET /feed`.
   Note: Returns a random sample of snippets matching the specified theme.
+
+- **POST /chat**
+  - **Description**: Send a message to the chat AI assistant for book-related questions and explanations.
+  - **Body**: JSON with `message` (string) - the user's question or message
+  - **Response**:
+    ```json
+    "<AI response text>"
+    ```
+  Note: The AI provides succinct, concise explanations for people who are reading a book.
