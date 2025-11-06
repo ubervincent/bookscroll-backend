@@ -41,7 +41,7 @@ export class FeedService {
       bookId: snippet.book.id as number,
       snippetId: snippet.id as number,
       snippetText: snippet.snippetText,
-      reason: snippet.reason,
+      context: snippet.context,
       startSentence: snippet.startSentence,
       endSentence: snippet.endSentence,
       sentenceText: snippet.sentenceText,

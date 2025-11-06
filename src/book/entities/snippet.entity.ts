@@ -17,7 +17,7 @@ export class Snippet {
     snippetText: string;
 
     @Column()
-    reason: string;
+    context: string;
 
     @ManyToMany(() => Theme, { cascade: true },)
     @JoinTable()

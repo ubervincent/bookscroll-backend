@@ -202,7 +202,7 @@ export class EpubParserService {
                     You are given a list of chapter ids of a book extracted from an epub file,
                     Determine if the chapters are named in a way that is easy to discern what they are about by their id
                     For example if the chapter id is "chapter-1", the chapter is about the first chapter of the book
-                    If the chapter ids are like "intro", "intro-1", "chap-1", "chap-2", "conclusion", "gloss", "index", "copy", "ack", etc. the chapter is about the introduction of the book
+                    If the chapter ids are like "intro", "intro-1", "chap-1", "chap-2", "conclusion", "gloss", "index", "copy", "ack", etc. then return true
                     if the chapter ids are uniform and don't contain any specific information about the chapter, like "id1", "id2", "id3", etc. then return false
                     
                     If unsure, return false.

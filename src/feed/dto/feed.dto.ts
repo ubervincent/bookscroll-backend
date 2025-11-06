@@ -8,7 +8,7 @@ export class FeedItem {
   bookAuthor?: string;
   snippetId?: number;
   snippetText?: string;
-  reason?: string;
+  context?: string;
   sentenceText?: string;
   textToSearch?: string;
   themes?: string[];

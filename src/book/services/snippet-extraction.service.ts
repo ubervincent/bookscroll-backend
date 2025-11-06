@@ -9,7 +9,7 @@ export interface Snippet {
   startSentence: number;
   endSentence: number;
   snippetText: string;
-  reason: string;
+  context: string;
   themes: string[];
   sentenceText: string;
   originalTextWithIndices: string;
@@ -20,7 +20,7 @@ const SnippetsSchema =
     snippets: z.array(
       z.object({
         snippetText: z.string(),
-        reason: z.string(),
+        context: z.string(),
         themes: z.array(z.string()),
         originalTextWithIndices: z.string(),
       })
@@ -31,44 +31,65 @@ export interface SnippetResponse {
   startSentence: number;
   endSentence: number;
   snippetText: string;
-  reason: string;
+  context: string;
   themes: string[];
   originalTextWithIndices: string;
 }
 
-const SNIPPET_MAX_LENGTH = 25;
-const SNIPPET_MIN_LENGTH = 6;
+const SNIPPET_MAX_LENGTH = 40;
+const SNIPPET_MIN_LENGTH = 8;
 
 
 const MAX_CONCURRENT_REQUESTS = 15;
 
-const JOIN_SENTENCES_THRESHOLD = 30;
+const JOIN_SENTENCES_THRESHOLD = 20;
 
 const SYSTEM_INSTRUCTIONS = `
-You are a social-media content editor.  
-Your task: Extract highly-shareable, coherent, inspirational snippets from the passage below that works on its own (without additional context), and that is ready for scrolling, quoting, reposting.
+You are a social-media content editor. Your job: extract stand-alone, inspirational, shareable snippets from a passage. 
+A snippet must 
+(a) be ${SNIPPET_MIN_LENGTH}–${SNIPPET_MAX_LENGTH} words, 
+(b) be fully coherent without outside context, 
+(c) avoid headings, citations, boilerplate, indexes, references, and legalese. 
+If no suitable snippet exists, return an empty snippets array.
 
-Requirements:
-- The snippets must be between ${SNIPPET_MIN_LENGTH} and ${SNIPPET_MAX_LENGTH} words.  
-- It must stand alone: a reader should understand and share it without needing the original text. 
-- Sometimes you're given gibberish sentences like index, table of contents, copyright, bibliography, etc. Ignore them and do not produce the snippet text for them.
-- Do not include text that is purely chapter headings, citations, legal boilerplate, or out-of-context fragments.  
-- If the passage offers no suitable snippets, respond with an empty array.
+Two-pass policy
+	1.	Score each sentence for: stand-alone clarity, quotability, insight/action, universality (not “this chapter,” not “in section 3”).
+	2.	Select & refine only high-scoring options. You may lightly compress or rephrase to make the idea fully stand-alone, but do not invent facts.
+	3.	Densify: if a snippet can include one more precise detail without increasing length, do so.
+	4.	Validate: enforce ${SNIPPET_MIN_LENGTH}–${SNIPPET_MAX_LENGTH} words, no headings/boilerplate, no ellipses at the start/end, and each snippet must map back to the exact source sentence indices.
+	5.	Self-consistency: generate up to 3 candidates per top sentence and keep the best by the rubric.
 
-For the snippets:
-- “themes” is an array of broad, general, lowercase theme-words (e.g., ["self-belief","creative-flow"]).  
-- “start_sentence” and “end_sentence” refer to the index numbers of the sentence(s) in the source paragraph you used <index></index> tags.  
-- If you choose more than one sentence, the snippets should feel unified and coherent.
+Return fields
+	•	originalTextWithIndices: the passage with <n>…</n> tags around each sentence.
+	•	snippets: each item includes text, themes (lowercase, broad), start_sentence, end_sentence.
+  •	context: a concise description of the context of what the snippet is about.
+  •	Prefer start_sentence == end_sentence.
+  •	Only expand to a range if necessary for clarity.
 
-Return the originalTextWithIndices with indices tags along with the sentences you used to extract the snippets.
-Example of the originalTextWithIndices:
-<1>This is the first sentence.</1> <2>This is the second sentence.</2>...<n>This is the nth sentence.</n>
+Scoring rubric (0–5 each)
+	•	Stand-alone clarity
+	•	Quotability & rhythm (reads well in one glance)
+	•	Actionability/insight (evokes learning or doing)
+	•	Universality (no local references, no “this chapter/figure”)
+Keep only snippets with average ≥4.
 
-DO NOT PRODUCE THE SNIPPET TEXT IF YOU CANNOT PRODUCE THE INDEXED SENTENCES
+Few-shot contrasts
+Not-Good (reject): “As discussed earlier, this framework works.” — out-of-context, no idea.
+Not-Good (reject): “Chapter 2: The Method.” — heading/boilerplate.
+Good (accept): “Systems change when tiny habits become daily defaults.” — stand-alone, actionable, 7 words too short → expand to 8–40 words.
+Good (accept): “Growth begins when you track what you avoid measuring.” — stand-alone, provocative, actionable.
 
-Tone: warm, encouraging, readable in a single glance.  
-Focus: key idea or concept in the book passage that evokes insight or action.
+You may paraphrase for clarity, rhythm, and standalone meaning.
+	•	Preserve factual meaning.
+	•	You may reorganize ideas and replace vague words with clearer ones.
+	•	You may generalize specifics (e.g., “in chapter 3” → “when we learn”).
+	•	Do not add new facts, numbers, names, or claims the author didn’t state.
+	•	If meaning becomes uncertain, discard the candidate.
 
+Safety & honesty
+	•	If no sentence can stand alone after light rewriting, return an empty snippets array.
+	•	Never fabricate names, numbers, or citations.
+  •	If you cannot return the originalTextWithIndices, return an empty snippets array.
 `;
 
 const logger = new Logger('SnippetExtractionService');
@@ -102,11 +123,12 @@ export class SnippetExtractionService {
           const result = await this.callOpenAI(paragraph);
 
             snippets = [...snippets, ...result.snippets.map(snippet => {
-            const indices = this.parseOriginalTextIndices(snippet.originalTextWithIndices);
+            const startIndex = this.parseOriginalTextIndices(snippet.originalTextWithIndices);
             return {
               ...snippet,
-              startSentence: Math.min(...indices),
-              endSentence: Math.max(...indices),
+              context: snippet.context,
+              startSentence: startIndex,
+              endSentence: startIndex,
               sentenceText: this.parseSentenceTextFromIndices(snippet.originalTextWithIndices).join(' '),
             };
           })];
@@ -122,23 +144,24 @@ export class SnippetExtractionService {
     return snippets;
   }
 
-  private parseOriginalTextIndices(sentence: string): number[] {
+  private parseOriginalTextIndices(sentence: string): number {
     if (sentence.length === 0) {
-      return [1];
+      return 1;
     }
-    const matches = [...sentence.matchAll(/<(\d+)>/g)]
-    if (matches.length === 0) {
+    const match = sentence.match(/<(\d+)>/);
+    if (!match) {
       logger.error(`No indices found for sentence: ${sentence}`);
-      return [1];
+      return 1;
     }
-    return matches.map(m => parseInt(m[1], 10));
+    return parseInt(match[1], 10);
   }
 
   private parseSentenceTextFromIndices(sentence: string): string[] {
     if (sentence.length === 0) {
       return [""];
     }
-    const matches = [...sentence.matchAll(/<\d+>(.*?)<\/\d+>/g)];
+    
+    const matches = [...sentence.matchAll(/<\d+>(.*?)(?:<\/\d+>|(?=<\d+>)|$)/g)];
     if (matches.length === 0) {
       logger.error(`No sentences found for sentence: ${sentence}`);
       return [""];
