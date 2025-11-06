@@ -60,7 +60,7 @@ Two-pass policy
 	5.	Self-consistency: generate up to 3 candidates per top sentence and keep the best by the rubric.
 
 Return fields
-	•	originalTextWithIndices: the passage with <index_number>…</index_number> tags around each sentence.
+	•	originalTextWithIndices: the sentence from which the snippet is extracted with <index_number>…</index_number> tags around it.
 	•	snippets: each item includes text, themes (lowercase, broad), start_sentence, end_sentence.
   •	context: a concise description of the context of what the snippet is about.
   •	Prefer start_sentence == end_sentence.
@@ -175,7 +175,7 @@ export class SnippetExtractionService {
     });
 
     const response = await client.responses.parse({
-      model: "gpt-5-mini-2025-08-07",
+      model: "gpt-5-nano-2025-08-07",
       reasoning: { effort: "low" },
       input: [
         {
