@@ -129,7 +129,10 @@ export class BookService {
     snippetEntity.context = snippet.context;
     snippetEntity.sentenceText = snippet.sentenceText;
     snippetEntity.originalTextWithIndices = snippet.originalTextWithIndices;
-    snippetEntity.themes = snippet.themes.map(theme => savedThemesEntities.find(t => t.name === theme) as ThemeEntity);
+    const uniqueThemeNames = Array.from(new Set(snippet.themes));
+    snippetEntity.themes = uniqueThemeNames
+      .map(theme => savedThemesEntities.find(t => t.name === theme))
+      .filter((theme): theme is ThemeEntity => theme !== undefined);
     snippetEntity.userId = userId;
     return snippetEntity;
   }
