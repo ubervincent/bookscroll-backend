@@ -175,7 +175,7 @@ export class SnippetExtractionService {
     });
 
     const response = await client.responses.parse({
-      model: "gpt-5-nano-2025-08-07",
+      model: "gpt-5-mini-2025-08-07",
       reasoning: { effort: "low" },
       input: [
         {
